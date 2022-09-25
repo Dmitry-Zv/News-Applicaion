@@ -11,7 +11,7 @@ interface NewsApi {
     @GET("/v2/everything")
     suspend fun getEverything(
         @Query("q") query: String,
-        @Query("page") page: Int = 1,
+        @Query("page") page: Int,
         @Query("apiKey") apiKey: String = Constants.API_KEY
     ) : Response<NewsModel>
 
