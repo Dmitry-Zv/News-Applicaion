@@ -1,70 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/item_card_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="12dp">
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardCornerRadius="4dp"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent">
 
-    <ImageView
-        android:id="@+id/article_image"
-        android:layout_width="88dp"
-        android:layout_height="84dp"
-        android:scaleType="centerCrop"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/const_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <LinearLayout
-        android:id="@+id/article_info"
-        android:layout_width="185dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/article_image"
-        app:layout_constraintTop_toTopOf="parent">
+        <ImageView
+            android:id="@+id/article_image"
+            android:layout_width="88dp"
+            android:layout_height="84dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintStart_toStartOf="@+id/const_layout"
+            app:layout_constraintTop_toTopOf="@+id/const_layout" />
 
-        <TextView
-            android:id="@+id/article_date"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/article_info"
+            android:layout_width="185dp"
             android:layout_height="wrap_content"
-            android:textColor="@color/grey_black"
-            android:textSize="12sp"
-            tools:text="Thu, Apr 19 - 20.00 Pm" />
+            android:layout_marginStart="10dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="@+id/const_layout"
+            app:layout_constraintStart_toEndOf="@id/article_image"
+            app:layout_constraintTop_toTopOf="@+id/const_layout">
 
-        <TextView
-            android:id="@+id/article_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="3"
-            android:textColor="@color/grey_black"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:fontWeight="700"
-            tools:text="Musk invited to UK Parliament o discuss $44 billion Twitter buyout" />
+            <TextView
+                android:id="@+id/article_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/grey_black"
+                android:textSize="12sp"
+                tools:text="Thu, Apr 19 - 20.00 Pm" />
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/article_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="3"
+                android:textColor="@color/grey_black"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:fontWeight="700"
+                tools:text="Musk invited to UK Parliament o discuss $44 billion Twitter buyout" />
 
-    <ImageView
-        android:id="@+id/icon_favourite"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:layout_marginStart="12dp"
-        android:src="@drawable/ic_heart_24"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/article_info"
-        app:layout_constraintTop_toTopOf="parent" />
+        </LinearLayout>
 
-    <ImageView
-        android:id="@+id/icon_share"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:layout_marginStart="17dp"
-        android:src="@drawable/ic_share_24"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/icon_favourite"
-        app:layout_constraintTop_toTopOf="parent" />
+        <ImageView
+            android:id="@+id/icon_favourite"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="12dp"
+            android:src="@drawable/ic_heart_24"
+            app:layout_constraintBottom_toBottomOf="@+id/const_layout"
+            app:layout_constraintStart_toEndOf="@id/article_info"
+            app:layout_constraintTop_toTopOf="@+id/const_layout" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <ImageView
+            android:id="@+id/icon_share"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="17dp"
+            android:src="@drawable/ic_share_24"
+            app:layout_constraintBottom_toBottomOf="@+id/const_layout"
+            app:layout_constraintStart_toEndOf="@id/icon_favourite"
+            app:layout_constraintTop_toTopOf="@+id/const_layout" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>
+
