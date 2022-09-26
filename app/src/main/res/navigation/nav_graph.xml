@@ -11,14 +11,18 @@
         android:label="fragment_main"
         tools:layout="@layout/fragment_main" >
         <action
-            android:id="@+id/action_mainFragment_to_detailFragment2"
+            android:id="@+id/action_mainFragment_to_detailFragment"
             app:destination="@id/detailFragment" />
     </fragment>
     <fragment
         android:id="@+id/detailFragment"
         android:name="by.zharikov.newsapplicaion.ui.details.DetailFragment"
         android:label="fragment_detail"
-        tools:layout="@layout/fragment_detail" />
+        tools:layout="@layout/fragment_detail" >
+        <argument
+            android:name="article"
+            app:argType="by.zharikov.newsapplicaion.data.model.Article" />
+    </fragment>
     <fragment
         android:id="@+id/favouriteFragment"
         android:name="by.zharikov.newsapplicaion.ui.favourie.FavouriteFragment"
