@@ -1,24 +1,30 @@
 package by.zharikov.newsapplicaion.adapter
 
-import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.AsyncListDiffer
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import by.zharikov.newsapplicaion.R
-import by.zharikov.newsapplicaion.data.model.Article
+import by.zharikov.newsapplicaion.data.model.UiArticle
+import by.zharikov.newsapplicaion.utils.ArticlesDiffUtil
 import by.zharikov.newsapplicaion.utils.CellClickListener
+import by.zharikov.newsapplicaion.utils.FavIconClickListener
+import by.zharikov.newsapplicaion.utils.ShareIconClickListener
 import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.item_article.view.*
 
 class ArticleAdapter(
-    private val articles: List<Article>,
-    private val context: Context,
-    private val cellClickListener: CellClickListener
+    private var articles: MutableList<UiArticle>,
+    private val cellClickListener: CellClickListener,
+    private val favIconClickListener: FavIconClickListener,
+    private val shareIconClickListener: ShareIconClickListener
 ) :
     RecyclerView.Adapter<ArticleAdapter.ArticleViewHolder>() {
 
-    class ArticleViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    inner class ArticleViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArticleViewHolder {
         return ArticleViewHolder(
@@ -29,16 +35,51 @@ class ArticleAdapter(
     }
 
     override fun onBindViewHolder(holder: ArticleViewHolder, position: Int) {
-        val article = articles[position]
+        val uiArticle = articles[position]
         holder.itemView.apply {
-            Glide.with(this).load(article.url).into(article_image)
-            article_date.text = article.publishedAt
-            article_title.text = article.title
+            if (uiArticle.article.urlToImage == null) article_image.setImageResource(R.drawable.news)
+            else Glide.with(this).load(uiArticle.article.urlToImage).into(article_image)
+            article_image.clipToOutline = true
+            article_date.text = uiArticle.article.publishedAt
+            article_title.text = uiArticle.article.title
             setOnClickListener {
-                cellClickListener.onCellClickListener(article)
+                cellClickListener.onCellClickListener(uiArticle.article)
             }
+            if (uiArticle.isLiked) {
+                icon_favourite.setImageResource(R.drawable.ic_favorite_24)
+                Log.d("Bool", "${uiArticle.isLiked}")
+            } else {
+                icon_favourite.setImageResource(R.drawable.ic_favorite_border_24)
+                Log.d("Bool", "${uiArticle.isLiked}")
+            }
+            icon_favourite.setOnClickListener {
+                uiArticle.isLiked = !uiArticle.isLiked
+                favIconClickListener.onFavIconClickListener(uiArticle = uiArticle)
+                if (uiArticle.isLiked) {
+                    icon_favourite.setImageResource(R.drawable.ic_favorite_24)
+                    Log.d("Bool", "${uiArticle.isLiked}")
+                } else {
+                    icon_favourite.setImageResource(R.drawable.ic_favorite_border_24)
+                    Log.d("Bool", "${uiArticle.isLiked}")
+                }
+            }
+            icon_share.setOnClickListener {
+                shareIconClickListener.onShareIconClickListener(uiArticle.article.url.toString())
+            }
+
         }
     }
 
+    fun updateArticles(articles: MutableList<UiArticle>) {
+        val articlesDiffUtil = ArticlesDiffUtil(this.articles, articles)
+        val diffResult = DiffUtil.calculateDiff(articlesDiffUtil)
+        this.articles.clear()
+        this.articles = articles
+        diffResult.dispatchUpdatesTo(this)
+
+    }
+
     override fun getItemCount() = articles.size
+
+
 }

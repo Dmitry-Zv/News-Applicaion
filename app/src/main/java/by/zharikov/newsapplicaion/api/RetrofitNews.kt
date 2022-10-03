@@ -9,6 +9,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class RetrofitNews {
+    private var retrofit: Retrofit? = null
 
     private val interceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -24,15 +25,17 @@ class RetrofitNews {
 
 
     fun getApi(): NewsApi {
+        if (retrofit == null) {
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(CoroutineCallAdapterFactory.invoke())
-            .client(client)
-            .build()
-        return retrofit.create(NewsApi::class.java)
+             retrofit = Retrofit.Builder()
+                .baseUrl(Constants.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(CoroutineCallAdapterFactory.invoke())
+                .client(client)
+                .build()
 
+        }
+        return retrofit!!.create(NewsApi::class.java)
     }
 
 }

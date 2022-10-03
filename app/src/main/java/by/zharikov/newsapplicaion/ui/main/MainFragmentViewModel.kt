@@ -4,16 +4,16 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import by.zharikov.newsapplicaion.api.RetrofitNews
+import by.zharikov.newsapplicaion.data.model.EntityArticle
 import by.zharikov.newsapplicaion.data.model.NewsModel
+import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
 import by.zharikov.newsapplicaion.repository.NewsRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import retrofit2.Response
 
-class MainFragmentViewModel(private val newsRepository: NewsRepository) : ViewModel() {
+class MainFragmentViewModel(
+    private val newsRepository: NewsRepository,
+    private val articleEntityRepository: ArticleEntityRepository
+) : ViewModel() {
 
     private val _newsLiveData = MutableLiveData<NewsModel>()
     val newLiveData: LiveData<NewsModel>
@@ -23,14 +23,31 @@ class MainFragmentViewModel(private val newsRepository: NewsRepository) : ViewMo
         get() = _errorMessage
     private val pageNumber = 1
 
-
     fun getNew(countryCode: String) {
         viewModelScope.launch {
 
             val response = newsRepository.newsGetTopHeadlines(countryCode, pageNumber)
 
-            if (response.isSuccessful) _newsLiveData.postValue(response.body())
-            else _errorMessage.postValue(response.message())
+            if (response.isSuccessful) {
+                _newsLiveData.postValue(response.body())
+
+
+            } else _errorMessage.postValue(response.message())
+        }
+    }
+
+    fun insertArticle(entityArticle: EntityArticle) {
+        viewModelScope.launch {
+
+            articleEntityRepository.repInsertArticle(entityArticle)
+        }
+
+    }
+
+    fun deleteArticle(title: String) {
+        viewModelScope.launch {
+            articleEntityRepository.repDeleteArticle(title = title)
+
         }
     }
 }

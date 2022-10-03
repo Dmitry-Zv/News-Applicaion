@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".ui.main.MainFragment">
 
-    <!-- TODO: Update blank fragment layout -->
     <TextView
         android:id="@+id/title_text"
         android:layout_width="wrap_content"
@@ -15,6 +14,7 @@
         android:text="@string/app_name"
         android:textColor="@color/grey_black"
         android:textSize="40sp"
+        android:layout_marginTop="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -23,7 +23,7 @@
         android:id="@+id/popular_news_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="15dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="42dp"
         android:text="@string/popular_news"
         android:textColor="@color/grey_black"
@@ -37,11 +37,12 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:clipToPadding="false"
-        android:paddingBottom="50dp"
+        android:paddingBottom="120dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/popular_news_text" />
+        app:layout_constraintTop_toBottomOf="@id/popular_news_text"
+        tools:listitem="@layout/item_article" />
 
     <ProgressBar
         android:id="@+id/progress_bar"

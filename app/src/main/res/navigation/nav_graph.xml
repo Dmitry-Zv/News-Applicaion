@@ -9,36 +9,83 @@
         android:id="@+id/mainFragment"
         android:name="by.zharikov.newsapplicaion.ui.main.MainFragment"
         android:label="fragment_main"
-        tools:layout="@layout/fragment_main" >
+        tools:layout="@layout/fragment_main">
         <action
             android:id="@+id/action_mainFragment_to_detailFragment"
-            app:destination="@id/detailFragment" />
+            app:destination="@id/detailFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right" />
     </fragment>
     <fragment
         android:id="@+id/detailFragment"
         android:name="by.zharikov.newsapplicaion.ui.details.DetailFragment"
         android:label="fragment_detail"
-        tools:layout="@layout/fragment_detail" >
+        tools:layout="@layout/fragment_detail">
         <argument
             android:name="article"
             app:argType="by.zharikov.newsapplicaion.data.model.Article" />
+        <action
+            android:id="@+id/action_detailFragment_to_mainFragment"
+            app:destination="@id/mainFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right" />
+        <action
+            android:id="@+id/action_detailFragment_to_searchFragment"
+            app:destination="@id/searchFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right" />
+        <action
+            android:id="@+id/action_detailFragment_to_favouriteFragment"
+            app:destination="@id/favouriteFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right" />
+        <argument
+            android:name="argInt"
+            android:defaultValue="0"
+            app:argType="integer" />
+        <action
+            android:id="@+id/action_detailFragment_to_webFragment"
+            app:destination="@id/webFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right"/>
     </fragment>
     <fragment
         android:id="@+id/favouriteFragment"
         android:name="by.zharikov.newsapplicaion.ui.favourie.FavouriteFragment"
         android:label="fragment_favourie"
-        tools:layout="@layout/fragment_favourie" >
+        tools:layout="@layout/fragment_favourie">
         <action
             android:id="@+id/action_favouriteFragment_to_detailFragment"
-            app:destination="@id/detailFragment" />
+            app:destination="@id/detailFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right" />
     </fragment>
     <fragment
         android:id="@+id/searchFragment"
         android:name="by.zharikov.newsapplicaion.ui.search.SearchFragment"
         android:label="fragment_search"
-        tools:layout="@layout/fragment_search" >
+        tools:layout="@layout/fragment_search">
         <action
             android:id="@+id/action_searchFragment_to_detailFragment"
-            app:destination="@id/detailFragment" />
+            app:destination="@id/detailFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right" />
+    </fragment>
+    <fragment
+        android:id="@+id/webFragment"
+        android:name="by.zharikov.newsapplicaion.ui.web.WebFragment"
+        android:label="fragment_web"
+        tools:layout="@layout/fragment_web" >
+        <argument
+            android:name="article_arg"
+            app:argType="by.zharikov.newsapplicaion.data.model.Article" />
+        <action
+            android:id="@+id/action_webFragment_to_detailFragment"
+            app:destination="@id/detailFragment"
+            app:enterAnim="@android:anim/slide_out_right"
+            app:exitAnim="@android:anim/slide_out_right"/>
+        <argument
+            android:name="arg_int"
+            app:argType="integer" />
     </fragment>
 </navigation>

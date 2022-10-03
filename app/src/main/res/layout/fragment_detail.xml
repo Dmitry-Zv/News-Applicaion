@@ -21,7 +21,8 @@
             <ImageView
                 android:id="@+id/header_image"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:scaleType="center" />
 
             <ImageView
                 android:id="@+id/icon_back"
@@ -29,6 +30,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="9dp"
                 android:layout_marginBottom="18dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 android:src="@drawable/ic_back_24"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
@@ -39,6 +43,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="9dp"
                 android:layout_marginBottom="18dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 android:src="@drawable/ic_share_24"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
@@ -49,7 +56,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="9dp"
                 android:layout_marginBottom="18dp"
-                android:src="@drawable/ic_favorite_border_24"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/icon_share" />
 
@@ -58,55 +67,62 @@
 
     </androidx.cardview.widget.CardView>
 
-    <TextView
-        android:id="@+id/article_detail_title_text"
+    <ScrollView
+        android:id="@+id/scroll_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="18dp"
-        android:layout_marginTop="24dp"
-        android:textColor="@color/grey_black"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/header_card_view"
-        tools:text="Musk invited to UK Parliament to discuss $44 billion Twitter buyout" />
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/header_card_view"
+        app:layout_constraintBottom_toBottomOf="parent">
 
-    <TextView
-        android:id="@+id/article_detail_description_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="13dp"
-        android:layout_marginTop="44dp"
-        android:text="@string/description"
-        android:textColor="@color/grey_black"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/article_detail_title_text" />
+        <LinearLayout
+            android:id="@+id/linear_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+           >
 
-    <TextView
-        android:id="@+id/article_detail_description_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="13dp"
-        android:layout_marginTop="14dp"
-        android:lineHeight="19dp"
-        android:textColor="@color/grey_black"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/article_detail_description_title"
-        tools:text="Recently, Twitter announced that it has entered in fjaffajljglj kglalgkamg glaglagkagma gklaglk lkgalkg gklagl" />
+            <TextView
+                android:id="@+id/article_detail_title_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="18dp"
+                android:layout_marginTop="24dp"
+                android:textColor="@color/grey_black"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                tools:text="Musk invited to UK Parliament to discuss $44 billion Twitter buyout" />
 
-    <Button
-        android:id="@+id/article_detail_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:text="@string/visit_site"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/article_detail_description_text" />
+            <TextView
+                android:id="@+id/article_detail_description_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="13dp"
+                android:layout_marginTop="44dp"
+                android:text="@string/description"
+                android:textColor="@color/grey_black"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintTop_toBottomOf="@id/article_detail_title_text" />
+
+            <TextView
+                android:id="@+id/article_detail_description_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="13dp"
+                android:layout_marginTop="14dp"
+                android:lineHeight="19dp"
+                android:textColor="@color/grey_black"
+                android:textSize="12sp"
+                tools:text="Recently, Twitter announced that it has entered in fjaffajljglj kglalgkamg glaglagkagma gklaglk lkgalkg gklagl" />
+
+            <Button
+                android:id="@+id/article_detail_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="40dp"
+                android:text="@string/visit_site" />
+        </LinearLayout>
+    </ScrollView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
