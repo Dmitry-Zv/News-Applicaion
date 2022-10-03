@@ -2,6 +2,10 @@ package by.zharikov.newsapplicaion
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.setupWithNavController
 import by.zharikov.newsapplicaion.databinding.ActivityMainBinding
@@ -16,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private val mBinding get() = _binding!!
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.fragment_splash)
 
         CoroutineScope(Dispatchers.Main)
@@ -23,10 +28,12 @@ class MainActivity : AppCompatActivity() {
                 delay(5000)
                 _binding = ActivityMainBinding.inflate(layoutInflater)
                 setContentView(mBinding.root)
-                bottom_nav.setupWithNavController(
+                mBinding.bottomNav.setupWithNavController(
                     navController = nav_host_fragment.findNavController()
                 )
             }
+
+
     }
 
 
@@ -34,4 +41,6 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         _binding = null
     }
+
+
 }

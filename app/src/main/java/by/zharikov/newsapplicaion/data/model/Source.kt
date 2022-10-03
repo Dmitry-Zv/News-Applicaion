@@ -1,12 +1,13 @@
 package by.zharikov.newsapplicaion.data.model
 
 
-import com.google.gson.annotations.SerializedName
+import androidx.room.ColumnInfo
+import androidx.room.Entity
 import java.io.Serializable
 
+@Entity(tableName = "source")
 data class Source(
-    @SerializedName("id")
+    @ColumnInfo(name = "source_id")
     val id: String?,
-    @SerializedName("name")
     val name: String
 ) : Serializable
