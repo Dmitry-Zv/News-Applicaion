@@ -1,7 +1,6 @@
 package by.zharikov.newsapplicaion.db
 
 import android.content.Context
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -14,14 +13,14 @@ abstract class ArticleDatabase : RoomDatabase() {
     abstract fun getArticleDao(): ArticleDao
 
     companion object {
-        private val MIGRATION_1_2 = object : Migration(1, 2){
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("CREATE TABLE 'source' ('source_id' TEXT, 'name' TEXT NOT NULL)")
             }
 
         }
 
-        private val MIGRATION_2_3 = object : Migration(2, 3){
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE article ADD COLUMN source_id TEXT")
                 database.execSQL("ALTER TABLE article ADD COLUMN name TEXT ")
@@ -45,7 +44,6 @@ abstract class ArticleDatabase : RoomDatabase() {
             return INSTANCE!!
         }
     }
-
 
 
 }

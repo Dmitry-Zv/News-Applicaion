@@ -8,7 +8,7 @@ import java.lang.IllegalArgumentException
 
 class MainViewModelFactory(
     private val newsRepository: NewsRepository,
-    private val articleEntityRepository: ArticleEntityRepository
+    private val articleEntityRepository: ArticleEntityRepository,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return if (modelClass.isAssignableFrom(MainFragmentViewModel::class.java)) {

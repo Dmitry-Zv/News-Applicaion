@@ -9,4 +9,7 @@ class NewsRepository(private val retrofitNews: RetrofitNews) {
     suspend fun newsGetEverything(q: String, pageNumber: Int) =
         retrofitNews.getApi().getEverything(q, pageNumber)
 
+    suspend fun newGetTopHeadLinesCategory(country: String, category: String) =
+        retrofitNews.getApi().getTopHeadLinesCategory(country = country, category = category)
+
 }

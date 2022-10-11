@@ -12,7 +12,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.os.bundleOf
-import androidx.lifecycle.Observer
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +23,7 @@ import by.zharikov.newsapplicaion.data.model.EntityArticle
 import by.zharikov.newsapplicaion.data.model.UiArticle
 import by.zharikov.newsapplicaion.databinding.FragmentFavourieBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
+import by.zharikov.newsapplicaion.ui.SharedViewModel
 import by.zharikov.newsapplicaion.utils.*
 
 
@@ -32,11 +33,14 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
     private var _binding: FragmentFavourieBinding? = null
     private val mBinding get() = _binding!!
     private lateinit var favouriteViewModel: FavouriteViewModel
-    private lateinit var pref: SharedPreferences
+    private val pref: SharedPreferences by lazy {
+        requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
+    }
     private lateinit var articleAdapter: ArticleAdapter
     private lateinit var entityArticle: EntityArticle
     private val articleToEntityArticle = ArticleToEntityArticle()
     private val entityArticleToArticle = EntityArticleToArticle()
+    private val sharedViewModel: SharedViewModel by activityViewModels()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +64,6 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         _binding = FragmentFavourieBinding.inflate(inflater, container, false)
         return mBinding.root
     }
@@ -68,18 +71,21 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
-        pref = requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
+        val counter = 0
+        sharedViewModel.setCounter(counter)
+        pref.edit().putInt("Counter", counter).apply()
         favouriteViewModel = ViewModelProvider(
             this,
             FavouriteViewModelFactory(articleEntityRepository)
         )[FavouriteViewModel::class.java]
         favouriteViewModel.getArticles()
-        favouriteViewModel.saveData.observe(viewLifecycleOwner, Observer { entityArticles ->
+        favouriteViewModel.saveData.observe(viewLifecycleOwner) { entityArticles ->
             for (entity in entityArticles) {
                 Log.d("ChEntity", entity.title.toString())
             }
             val articles = mapFromEntityToArticle(entityArticles)
-            val uiArticles = map(articles as MutableList<Article>)
+            val uiArticles = map(articles as MutableList<Article>).asReversed()
+            sharedViewModel.setUiListArticle(articles)
             mBinding.headerCount.text = uiArticles.size.toString()
             articleAdapter =
                 ArticleAdapter(uiArticles, this@FavouriteFragment, this@FavouriteFragment, this)
@@ -112,7 +118,7 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
                 }
             }
 
-        })
+        }
 
 
     }
@@ -149,12 +155,12 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
         favouriteViewModel.deleteArticle(entityArticle.title.toString())
         favouriteViewModel.getArticles()
         Toast.makeText(requireContext(), "DELETED", Toast.LENGTH_SHORT).show()
-        favouriteViewModel.saveData.observe(viewLifecycleOwner, Observer { entityArticles ->
+        favouriteViewModel.saveData.observe(viewLifecycleOwner) { entityArticles ->
             val articles = mapFromEntityToArticle(entityArticles)
             val uiArticles = map(articles as MutableList<Article>)
             articleAdapter.updateArticles(uiArticles)
 
-        })
+        }
 
 
     }

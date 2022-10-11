@@ -3,9 +3,8 @@ package by.zharikov.newsapplicaion.ui.search
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -13,24 +12,29 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresApi
 import androidx.core.os.bundleOf
-import androidx.lifecycle.Observer
+import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import by.zharikov.newsapplicaion.R
 import by.zharikov.newsapplicaion.adapter.ArticleAdapter
 import by.zharikov.newsapplicaion.api.RetrofitNews
+import by.zharikov.newsapplicaion.connectivity.MyState
 import by.zharikov.newsapplicaion.data.model.Article
 import by.zharikov.newsapplicaion.data.model.EntityArticle
 import by.zharikov.newsapplicaion.data.model.UiArticle
 import by.zharikov.newsapplicaion.databinding.FragmentSearchBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
 import by.zharikov.newsapplicaion.repository.NewsRepository
-import by.zharikov.newsapplicaion.utils.ArticleToEntityArticle
-import by.zharikov.newsapplicaion.utils.CellClickListener
-import by.zharikov.newsapplicaion.utils.FavIconClickListener
-import by.zharikov.newsapplicaion.utils.ShareIconClickListener
+import by.zharikov.newsapplicaion.ui.SharedViewModel
+import by.zharikov.newsapplicaion.utils.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, ShareIconClickListener {
 
@@ -39,9 +43,13 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
     lateinit var articles: List<Article>
     private lateinit var searchViewModel: SearchViewModel
     private lateinit var entityArticle: EntityArticle
-    private lateinit var pref: SharedPreferences
+    private val pref: SharedPreferences by lazy {
+        requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
+    }
     private lateinit var articleAdapter: ArticleAdapter
     private val articleToEntityArticle = ArticleToEntityArticle()
+    private val sharedViewModel: SharedViewModel by activityViewModels()
+    private var counter: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,52 +74,93 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Log.d("isConnected", "onViewCreated")
         val retrofitNews = RetrofitNews()
         val newsRepository = NewsRepository(retrofitNews)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
-        pref = requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
-        mBinding.edSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                mBinding.searchProgressBar.visibility = View.VISIBLE
-            }
+        counter = pref.getInt("Counter", 0)
+        searchViewModel = ViewModelProvider(
+            this,
+            SearchViewModelFactory(newsRepository, articleEntityRepository)
+        )[SearchViewModel::class.java]
 
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                searchViewModel = ViewModelProvider(
-                    this@SearchFragment,
-                    SearchViewModelFactory(newsRepository, articleEntityRepository)
-                )[SearchViewModel::class.java]
 
-                searchViewModel.getNews(p0.toString())
-                searchViewModel.newsModel.observe(viewLifecycleOwner, Observer { response ->
-                    mBinding.searchProgressBar.visibility = View.INVISIBLE
-                    articles = response.articles
-                    val uiArticles = map(articles as MutableList<Article>)
-                    articleAdapter =
-                        ArticleAdapter(
-                            uiArticles,
-                            this@SearchFragment,
-                            this@SearchFragment,
-                            this@SearchFragment
-                        )
-                    mBinding.searchRecycler.apply {
-                        layoutManager = LinearLayoutManager(requireContext())
-                        adapter = articleAdapter
+        var job: Job? = null
+        mBinding.edSearch.addTextChangedListener { text ->
+            sharedViewModel.state.observe(viewLifecycleOwner) { state ->
+                if (state == MyState.Fetched) {
+
+                    job?.cancel()
+                    if (text != null) {
+                        if (text.isNotEmpty())
+                            mBinding.searchProgressBar.visibility = View.VISIBLE
+                    }
+                    job = MainScope().launch {
+                        delay(500L)
+                        text?.let {
+                            if (it.toString().isNotEmpty()) {
+                                searchViewModel.getNews(it.toString())
+
+                                searchViewModel.newsModel.observe(viewLifecycleOwner) { response ->
+                                    mBinding.apply {
+                                        searchProgressBar.visibility = View.INVISIBLE
+                                        searchRecycler.visibility = View.VISIBLE
+                                        buttonRetryConnection.visibility = View.INVISIBLE
+                                        imageView.visibility = View.INVISIBLE
+                                        connectText.visibility = View.INVISIBLE
+                                        connectDescriptionText.visibility = View.INVISIBLE
+                                    }
+                                    articles = response.articles
+                                    val uiArticles = map(articles as MutableList<Article>)
+                                    articleAdapter =
+                                        ArticleAdapter(
+                                            uiArticles,
+                                            this@SearchFragment,
+                                            this@SearchFragment,
+                                            this@SearchFragment
+                                        )
+                                    mBinding.searchRecycler.apply {
+                                        layoutManager = LinearLayoutManager(requireContext())
+                                        adapter = articleAdapter
+                                    }
+
+
+                                }
+                                searchViewModel.errorMessage.observe(viewLifecycleOwner) { response ->
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "Request error",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    Log.d("CheckData", "Error: $response")
+                                }
+
+                            }
+                        }
+
                     }
 
-
-                })
-                searchViewModel.errorMessage.observe(viewLifecycleOwner, Observer { response ->
-                    Log.d("CheckData", "Error: $response")
-                })
+                } else {
+                    mBinding.apply {
+                        searchProgressBar.visibility = View.INVISIBLE
+                        searchRecycler.visibility = View.INVISIBLE
+                        buttonRetryConnection.visibility = View.VISIBLE
+                        imageView.visibility = View.VISIBLE
+                        connectText.visibility = View.VISIBLE
+                        connectDescriptionText.visibility = View.VISIBLE
+                    }
+                }
             }
+        }
 
-            override fun afterTextChanged(p0: Editable?) {
-            }
-
-        })
+        mBinding.buttonRetryConnection.setOnClickListener {
+            view.findNavController().navigate(R.id.action_searchFragment_self)
+        }
     }
+
 
     override fun onCellClickListener(article: Article) {
         val bundle = bundleOf("article" to article)
@@ -137,11 +186,23 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
         if (uiArticle.isLiked) {
             searchViewModel.insertArticle(entityArticle)
             Toast.makeText(requireContext(), "SAVED", Toast.LENGTH_SHORT).show()
+            counter++
+            sharedViewModel.setCounter(counter)
+            pref.edit().putInt("Counter", counter).apply()
         } else {
             searchViewModel.deleteArticle(entityArticle.title.toString())
             Toast.makeText(requireContext(), "DELETED", Toast.LENGTH_SHORT).show()
+            sharedViewModel.articles.observe(viewLifecycleOwner) { articles ->
+                if (!articles.contains(uiArticle.article)) {
+                    if (counter > 0) counter--
+                }
+            }
         }
+
+        sharedViewModel.setCounter(counter)
+        pref.edit().putInt("Counter", counter).apply()
     }
+
 
     override fun onShareIconClickListener(url: String) {
         val sendIntent = Intent().apply {

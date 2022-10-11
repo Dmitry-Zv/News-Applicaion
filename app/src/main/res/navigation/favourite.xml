@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/favourite"
+    app:startDestination="@id/favouriteFragment">
+
+    <fragment
+        android:id="@+id/favouriteFragment"
+        android:name="by.zharikov.newsapplicaion.ui.favourie.FavouriteFragment"
+        android:label="fragment_favourie"
+        tools:layout="@layout/fragment_favourie">
+        <action
+            android:id="@+id/action_favouriteFragment_to_detailFragment"
+            app:destination="@id/detailFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/detailFragment"
+        android:name="by.zharikov.newsapplicaion.ui.details.DetailFragment"
+        android:label="fragment_detail"
+        tools:layout="@layout/fragment_detail">
+        <action
+            android:id="@+id/action_detailFragment_to_webFragment"
+            app:destination="@id/webFragment" />
+        <action
+            android:id="@+id/action_detailFragment_to_favouriteFragment"
+            app:destination="@id/favouriteFragment" />
+        <argument
+            android:name="article"
+            app:argType="by.zharikov.newsapplicaion.data.model.Article" />
+        <argument
+            android:name="argInt"
+            app:argType="integer" />
+    </fragment>
+    <fragment
+        android:id="@+id/webFragment"
+        android:name="by.zharikov.newsapplicaion.ui.web.WebFragment"
+        android:label="fragment_web"
+        tools:layout="@layout/fragment_web">
+        <action
+            android:id="@+id/action_webFragment_to_detailFragment"
+            app:destination="@id/detailFragment" />
+        <argument
+            android:name="article_arg"
+            app:argType="by.zharikov.newsapplicaion.data.model.Article" />
+        <argument
+            android:name="arg_int"
+            app:argType="integer" />
+    </fragment>
+</navigation>

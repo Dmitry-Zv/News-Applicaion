@@ -10,6 +10,7 @@
         android:id="@+id/favourite_image"
         android:layout_width="100dp"
         android:layout_height="100dp"
+        android:contentDescription="@string/favourite_image"
         android:src="@drawable/ic_favorite_image_24"
         android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
