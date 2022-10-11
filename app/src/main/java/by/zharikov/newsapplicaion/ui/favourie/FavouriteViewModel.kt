@@ -17,7 +17,7 @@ class FavouriteViewModel(private val articleEntityRepository: ArticleEntityRepos
     val saveData: LiveData<List<EntityArticle>>
         get() = _saveData
 
-    fun getArticles(){
+    fun getArticles() {
         viewModelScope.launch {
             articles = articleEntityRepository.repGetAllArticles()
             for (article in articles) {

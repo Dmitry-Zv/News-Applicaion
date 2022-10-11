@@ -3,7 +3,6 @@ package by.zharikov.newsapplicaion.ui.details
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -11,8 +10,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.core.os.bundleOf
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
@@ -20,6 +19,7 @@ import by.zharikov.newsapplicaion.R
 import by.zharikov.newsapplicaion.data.model.UiArticle
 import by.zharikov.newsapplicaion.databinding.FragmentDetailBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
+import by.zharikov.newsapplicaion.ui.SharedViewModel
 import by.zharikov.newsapplicaion.utils.ArticleToEntityArticle
 import com.bumptech.glide.Glide
 
@@ -29,29 +29,13 @@ class DetailFragment : Fragment() {
     private var _binding: FragmentDetailBinding? = null
     private val mBinding get() = _binding!!
     private val bundleArgs: DetailFragmentArgs by navArgs()
-    private lateinit var pref: SharedPreferences
+    private val pref: SharedPreferences by lazy {
+        requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
+    }
     private val articleToEntityArticle = ArticleToEntityArticle()
     private lateinit var viewModel: DetailViewModel
     private var isLike = false
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        requireActivity().onBackPressedDispatcher.addCallback(
-            this, object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    when (arguments?.getInt("argInt")) {
-                        1 -> view?.findNavController()
-                            ?.navigate(R.id.action_detailFragment_to_mainFragment)
-                        2 -> view?.findNavController()
-                            ?.navigate(R.id.action_detailFragment_to_searchFragment)
-                        3 -> view?.findNavController()
-                            ?.navigate(R.id.action_detailFragment_to_favouriteFragment)
-                    }
-                }
-
-            }
-        )
-    }
+    private val sharedViewModel: SharedViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,7 +47,7 @@ class DetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        pref = requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
+        var counter = pref.getInt("Counter", 0)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
         viewModel = ViewModelProvider(
             this,
@@ -82,13 +66,6 @@ class DetailFragment : Fragment() {
                 val bundle = bundleOf("article_arg" to article)
                 arguments?.getInt("argInt")?.let { it1 -> bundle.putInt("arg_int", it1) }
                 view.findNavController().navigate(R.id.action_detailFragment_to_webFragment, bundle)
-//                try {
-//                    val address = Uri.parse(article.url)
-//                    val linkIntent = Intent(Intent.ACTION_VIEW, address)
-//                    startActivity(linkIntent)
-//                } catch (e: Exception) {
-//                    Log.d("CheckData", "The device doesn't have any browsers! ${e.message}")
-//                }
 
             }
         }
@@ -107,6 +84,9 @@ class DetailFragment : Fragment() {
                 pref.edit().putBoolean(articleArg.title, uiArticle.isLiked)
                     .apply()
                 Log.d("idTitle", articleArg.title.toString())
+                counter++
+                sharedViewModel.setCounter(counter)
+                pref.edit().putInt("Counter", counter).apply()
 
             } else {
                 mBinding.iconFavourite.setImageResource(R.drawable.ic_favorite_border_24)
@@ -116,10 +96,19 @@ class DetailFragment : Fragment() {
                 pref.edit().putBoolean(articleArg.title, uiArticle.isLiked)
                     .apply()
                 Log.d("idTitle", articleArg.title.toString())
+                sharedViewModel.articles.observe(viewLifecycleOwner) { articles ->
+                    if (!articles.contains(uiArticle.article)) {
+                        if (counter > 0) counter--
+                    }
+                }
             }
 
-
+            sharedViewModel.setCounter(counter)
+            pref.edit().putInt("Counter", counter).apply()
         }
+
+
+
         mBinding.iconShare.setOnClickListener {
             val sendIntent = Intent().apply {
                 action = Intent.ACTION_SEND
@@ -141,26 +130,4 @@ class DetailFragment : Fragment() {
         }
 
     }
-
-    override fun onPause() {
-        super.onPause()
-        Log.d("Fragment", "PAUSE")
-    }
-    override fun onStop() {
-        super.onStop()
-        Log.d("Fragment", "STOP")
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        Log.d("Fragment", "DETACH")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d("Fragment", "DESTROY")
-    }
-
-
-
 }

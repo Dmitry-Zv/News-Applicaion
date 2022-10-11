@@ -2,7 +2,6 @@ package by.zharikov.newsapplicaion.utils
 
 import by.zharikov.newsapplicaion.data.model.Article
 import by.zharikov.newsapplicaion.data.model.EntityArticle
-import by.zharikov.newsapplicaion.data.model.Source
 
 class EntityArticleToArticle {
     fun map(entityArticle: EntityArticle): Article {

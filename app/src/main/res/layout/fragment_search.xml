@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".ui.search.SearchFragment">
 
-    <!-- TODO: Update blank fragment layout -->
     <TextView
         android:id="@+id/search_text_view"
         android:layout_width="match_parent"
@@ -26,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="19dp"
-        android:hint="Enter key word!"
+        android:hint="@string/enter_key_word"
         android:paddingHorizontal="14dp"
         android:paddingVertical="24dp"
         android:singleLine="true"
@@ -62,6 +61,59 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/connection_icon"
+        android:src="@drawable/ic_wifi_off"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/connect_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/connection_problems"
+        android:textColor="@color/grey_black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
+    <TextView
+        android:id="@+id/connect_description_text"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="@string/download_failed_check_your_internet_connection"
+        android:textColor="@color/grey_black"
+        android:textSize="14sp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/connect_text" />
+
+    <Button
+        android:id="@+id/button_retry_connection"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="25dp"
+        android:text="@string/update_connection"
+        android:textColor="@color/grey_black"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/connect_description_text" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

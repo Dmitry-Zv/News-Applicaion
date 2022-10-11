@@ -10,7 +10,10 @@ import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
 import by.zharikov.newsapplicaion.repository.NewsRepository
 import kotlinx.coroutines.launch
 
-class SearchViewModel(private val newsRepository: NewsRepository, private val articleEntityRepository: ArticleEntityRepository) : ViewModel() {
+class SearchViewModel(
+    private val newsRepository: NewsRepository,
+    private val articleEntityRepository: ArticleEntityRepository
+) : ViewModel() {
     private val _newsViewModel = MutableLiveData<NewsModel>()
     val newsModel: LiveData<NewsModel>
         get() = _newsViewModel
@@ -21,15 +24,18 @@ class SearchViewModel(private val newsRepository: NewsRepository, private val ar
 
     fun getNews(q: String) {
         viewModelScope.launch {
-            val response = newsRepository.newsGetEverything(q, pageNumber)
-            if (response.isSuccessful) {
-                _newsViewModel.postValue(response.body())
-            } else {
-                _errorMessage.postValue(response.message())
+            try {
+                val response = newsRepository.newsGetEverything(q, pageNumber)
+                if (response.isSuccessful) {
+                    _newsViewModel.postValue(response.body())
+                }
+            } catch (e: Exception) {
+                _errorMessage.postValue(e.message)
             }
-        }
 
+        }
     }
+
 
     fun insertArticle(article: EntityArticle) {
         viewModelScope.launch {

@@ -7,21 +7,26 @@
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_back_24.xml" value="0.149" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_favorite_24.xml" value="0.1" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_favorite_border_24.xml" value="0.111" />
+        <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_favorite_image_24.xml" value="0.1505" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_heart_24.xml" value="0.111" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_home_24.xml" value="0.147" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_launcher_background.xml" value="0.111" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_search_24.xml" value="0.147" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_share_24.xml" value="0.111" />
+        <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_wifi_off.xml" value="0.1505" />
+        <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/ic_wifi_off_24.xml" value="0.1095" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/drawable/rounded_corner.xml" value="0.1995" />
-        <entry key="..\:/NewsApplicaion/app/src/main/res/layout/activity_main.xml" value="0.1" />
+        <entry key="..\:/NewsApplicaion/app/src/main/res/layout/activity_main.xml" value="0.176" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_detail.xml" value="0.176" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_favourie.xml" value="0.264" />
-        <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_main.xml" value="0.2" />
+        <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_main.xml" value="0.264" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_search.xml" value="0.1" />
+        <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_setting.xml" value="0.25416666666666665" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_splash.xml" value="0.2" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/layout/fragment_web.xml" value="0.15555555555555556" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/layout/item_article.xml" value="0.264" />
         <entry key="..\:/NewsApplicaion/app/src/main/res/menu/bottom_nav_menu.xml" value="0.253125" />
+        <entry key="..\:/NewsApplicaion/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1505" />
       </map>
     </option>
   </component>
