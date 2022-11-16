@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -10,11 +10,9 @@
         android:id="@+id/header_card_view"
         android:layout_width="match_parent"
         android:layout_height="248dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_alignParentTop="true">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -29,54 +27,53 @@
                 android:id="@+id/icon_back"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"
                 android:layout_marginStart="9dp"
                 android:layout_marginBottom="18dp"
                 android:clickable="true"
                 android:contentDescription="@string/icon_back"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
-                android:src="@drawable/ic_back_24"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+                android:src="@drawable/ic_back_24" />
 
             <ImageView
                 android:id="@+id/icon_share"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
                 android:layout_marginEnd="9dp"
                 android:layout_marginBottom="18dp"
                 android:clickable="true"
                 android:contentDescription="@string/icon_share"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
-                android:src="@drawable/ic_share_24"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                android:src="@drawable/ic_share_24" />
 
             <ImageView
                 android:id="@+id/icon_favourite"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
                 android:layout_marginEnd="9dp"
                 android:layout_marginBottom="18dp"
+                android:layout_toStartOf="@id/icon_share"
                 android:clickable="true"
                 android:contentDescription="@string/icon_favourite"
                 android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/icon_share" />
+                android:foreground="?attr/selectableItemBackground" />
 
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </RelativeLayout>
 
     </androidx.cardview.widget.CardView>
 
     <ScrollView
         android:id="@+id/scroll_view"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/header_card_view">
+        android:layout_height="match_parent"
+        android:layout_below="@id/header_card_view">
 
         <LinearLayout
             android:id="@+id/linear_layout"
@@ -129,4 +126,4 @@
         </LinearLayout>
     </ScrollView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

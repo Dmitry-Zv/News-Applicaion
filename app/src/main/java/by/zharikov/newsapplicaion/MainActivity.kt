@@ -12,10 +12,6 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.ui.setupWithNavController
 import by.zharikov.newsapplicaion.databinding.ActivityMainBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
@@ -48,34 +44,30 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.fragment_splash)
 
-        CoroutineScope(Dispatchers.Main)
-            .launch {
-                delay(5000)
-                _binding = ActivityMainBinding.inflate(layoutInflater)
-                setContentView(mBinding.root)
-                val navHostFragment =
-                    supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                mBinding.bottomNav.setupWithNavController(
-                    navController = navHostFragment.findNavController()
-                )
-                val isChecked0 = pref.getBoolean("SettingBooleanPosition0", false)
-                val isChecked1 = pref.getBoolean("SettingBooleanPosition1", false)
-                if (isChecked1) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                else {
-                    if (isChecked0) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                    else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                }
+        _binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(mBinding.root)
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        mBinding.bottomNav.setupWithNavController(
+            navController = navHostFragment.findNavController()
+        )
+        val isChecked0 = pref.getBoolean("SettingBooleanPosition0", false)
+        val isChecked1 = pref.getBoolean("SettingBooleanPosition1", false)
+        if (isChecked1) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        else {
+            if (isChecked0) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
 
-                badge = mBinding.bottomNav.getOrCreateBadge(R.id.favourite)
-                sharedViewModel.counter.observe(this@MainActivity) { counter ->
-                    badge.number = counter
-                    badge.isVisible = badge.number > 0
-                }
+        badge = mBinding.bottomNav.getOrCreateBadge(R.id.favourite)
+        sharedViewModel.counter.observe(this@MainActivity) { counter ->
+            badge.number = counter
+            badge.isVisible = badge.number > 0
+        }
 
 
-            }
+
         checkForConnection()
         viewModel.state.observe(this) { state ->
 

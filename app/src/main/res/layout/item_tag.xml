@@ -11,9 +11,10 @@
     android:background="?android:selectableItemBackground"
     android:clickable="true"
     android:elevation="8dp"
+    android:focusable="true"
     app:cardCornerRadius="7dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
@@ -22,29 +23,22 @@
             android:layout_width="110dp"
             android:layout_height="40dp"
             android:scaleType="centerCrop"
-            app:layout_constraintBottom_toBottomOf="@+id/txt_tag_name"
-            app:layout_constraintEnd_toEndOf="@+id/txt_tag_name"
-            app:layout_constraintStart_toStartOf="@+id/txt_tag_name"
-            app:layout_constraintTop_toTopOf="@+id/txt_tag_name"
             tools:src="@drawable/general" />
 
         <TextView
             android:id="@+id/txt_tag_name"
             android:layout_width="110dp"
-            android:layout_height="wrap_content"
-            android:background="#88000000"
+            android:layout_height="40dp"
             android:layout_gravity="center"
+            android:background="#88000000"
             android:paddingVertical="10dp"
             android:paddingStart="10dp"
             android:textColor="@color/white"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             tools:text="@tools:sample/cities" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
 
 </com.google.android.material.card.MaterialCardView>
 

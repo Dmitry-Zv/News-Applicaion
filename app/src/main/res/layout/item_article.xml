@@ -16,7 +16,7 @@
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <RelativeLayout
         android:id="@+id/const_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -25,20 +25,19 @@
             android:id="@+id/article_image"
             android:layout_width="88dp"
             android:layout_height="84dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
             android:contentDescription="@string/article_image"
-            android:scaleType="centerCrop"
-            app:layout_constraintStart_toStartOf="@+id/const_layout"
-            app:layout_constraintTop_toTopOf="@+id/const_layout" />
+            android:scaleType="centerCrop" />
 
         <LinearLayout
             android:id="@+id/article_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_gravity="center"
             android:layout_marginStart="20dp"
-            android:orientation="vertical"
-            app:layout_constraintBottom_toBottomOf="@+id/const_layout"
-            app:layout_constraintStart_toEndOf="@id/article_image"
-            app:layout_constraintTop_toTopOf="@+id/const_layout">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/article_date"
@@ -66,28 +65,29 @@
             android:id="@+id/icon_favourite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
+            android:layout_centerVertical="true"
+            android:layout_gravity="center"
+            android:layout_toStartOf="@id/icon_share"
             android:clickable="true"
             android:contentDescription="@string/icon_favourite"
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground"
-            app:layout_constraintBottom_toBottomOf="@+id/const_layout"
-            app:layout_constraintEnd_toStartOf="@+id/icon_share"
-            app:layout_constraintTop_toTopOf="@+id/const_layout" />
+
+            />
 
         <ImageView
             android:id="@+id/icon_share"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_gravity="center"
             android:layout_marginHorizontal="16dp"
             android:clickable="true"
             android:contentDescription="@string/icon_share"
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground"
-            android:src="@drawable/ic_share_24"
-            app:layout_constraintBottom_toBottomOf="@+id/const_layout"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/const_layout" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:src="@drawable/ic_share_24" />
+    </RelativeLayout>
 </androidx.cardview.widget.CardView>
 

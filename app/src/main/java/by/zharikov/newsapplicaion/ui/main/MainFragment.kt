@@ -39,9 +39,10 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
 
     private var _binding: FragmentMainBinding? = null
     private val mBinding get() = _binding!!
-    private var articles = emptyList<Article>()
+    private lateinit var articles: List<Article>
     private lateinit var articleAdapter: ArticleAdapter
     private lateinit var tagAdapter: TagAdapter
+    private var uiListArticle = mutableListOf<UiArticle>()
     private val pref: SharedPreferences by lazy {
         requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
     }
@@ -117,6 +118,9 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
         }
         counter = pref.getInt("Counter", 0)
         sharedViewModel.setCounter(counter)
+        mBinding.newsAdapter.layoutManager = LinearLayoutManager(requireContext())
+        articleAdapter = ArticleAdapter(uiListArticle, this, this, this)
+        mBinding.newsAdapter.adapter = articleAdapter
         mBinding.progressBar.visibility = View.VISIBLE
 
 
@@ -220,9 +224,7 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
             if (state == MyState.Fetched) {
                 job?.cancel()
 
-
                 job = MainScope().launch {
-                    delay(500L)
                     if (tagModelUi.isClicked) {
                         mBinding.popularNewsText.text = tagModelUi.tagModel.tagName
                         for (tagUi in tagUiList) {
@@ -230,6 +232,7 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
                             pref.edit().putBoolean(tagUi.tagModel.tagName, tagUi.isClicked).apply()
                         }
                         mainViewModel.setTagUiList(tagUiList)
+                        delay(500L)
                         mainViewModel.getNewByCategory("us", tagModelUi.tagModel.tagName)
                     } else {
                         mBinding.popularNewsText.setText(R.string.popular_news)
@@ -237,6 +240,8 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
                             tagUi.isClicked = false
                             pref.edit().putBoolean(tagUi.tagModel.tagName, tagUi.isClicked).apply()
                         }
+                        mainViewModel.setTagUiList(tagUiList)
+                        delay(500L)
                         mainViewModel.getNew("ru")
                     }
 
@@ -273,7 +278,7 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
                 imageView.visibility = View.INVISIBLE
             }
             articles = newsModel.articles
-            val uiListArticle = map(articles as MutableList<Article>)
+            uiListArticle = map(articles as MutableList<Article>)
             mBinding.newsAdapter.layoutManager = LinearLayoutManager(requireContext())
             articleAdapter = ArticleAdapter(uiListArticle, this, this, this)
             mBinding.newsAdapter.adapter = articleAdapter
@@ -297,6 +302,11 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
             connectText.visibility = View.VISIBLE
             imageView.visibility = View.VISIBLE
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 
 }

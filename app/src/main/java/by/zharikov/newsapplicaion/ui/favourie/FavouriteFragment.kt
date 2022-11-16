@@ -38,6 +38,7 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
     }
     private lateinit var articleAdapter: ArticleAdapter
     private lateinit var entityArticle: EntityArticle
+    private var uiArticles = mutableListOf<UiArticle>()
     private val articleToEntityArticle = ArticleToEntityArticle()
     private val entityArticleToArticle = EntityArticleToArticle()
     private val sharedViewModel: SharedViewModel by activityViewModels()
@@ -78,13 +79,19 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
             this,
             FavouriteViewModelFactory(articleEntityRepository)
         )[FavouriteViewModel::class.java]
+        articleAdapter =
+            ArticleAdapter(uiArticles, this@FavouriteFragment, this@FavouriteFragment, this)
+        mBinding.recyclerFavourite.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = articleAdapter
+        }
         favouriteViewModel.getArticles()
         favouriteViewModel.saveData.observe(viewLifecycleOwner) { entityArticles ->
             for (entity in entityArticles) {
                 Log.d("ChEntity", entity.title.toString())
             }
             val articles = mapFromEntityToArticle(entityArticles)
-            val uiArticles = map(articles as MutableList<Article>).asReversed()
+            uiArticles = map(articles as MutableList<Article>).asReversed()
             sharedViewModel.setUiListArticle(articles)
             mBinding.headerCount.text = uiArticles.size.toString()
             articleAdapter =
@@ -93,6 +100,7 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
                 layoutManager = LinearLayoutManager(requireContext())
                 adapter = articleAdapter
             }
+
 
             if (entityArticles.isEmpty()) {
                 mBinding.apply {
@@ -104,10 +112,7 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
                     favouriteDescriptionText.visibility = View.VISIBLE
                 }
 
-            }
-            //   articleAdapter.setData(uiArticles)
-
-            else {
+            } else {
                 mBinding.apply {
                     favouriteTitleHeader.visibility = View.VISIBLE
                     headerCount.visibility = View.VISIBLE
@@ -157,7 +162,7 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
         Toast.makeText(requireContext(), "DELETED", Toast.LENGTH_SHORT).show()
         favouriteViewModel.saveData.observe(viewLifecycleOwner) { entityArticles ->
             val articles = mapFromEntityToArticle(entityArticles)
-            val uiArticles = map(articles as MutableList<Article>)
+            val uiArticles = map(articles as MutableList<Article>).asReversed()
             articleAdapter.updateArticles(uiArticles)
 
         }
@@ -174,6 +179,11 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
 
         val shareIntent = Intent.createChooser(sendIntent, null)
         startActivity(shareIntent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 }
 
