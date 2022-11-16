@@ -22,29 +22,27 @@ class NetworkStatusTracker(context: Context) {
     @RequiresApi(Build.VERSION_CODES.O)
     val networkStatus = callbackFlow {
 
-            val networkStatusCallback = object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    trySend(NetworkStatus.Available).isSuccess
-                }
-
-
-                override fun onLost(network: Network) {
-                    trySend(NetworkStatus.Lost).isSuccess
-                }
-
-
-
+        val networkStatusCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                trySend(NetworkStatus.Available).isSuccess
             }
-            val request = NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .build()
-            connectivityManager.registerNetworkCallback(request, networkStatusCallback)
 
-            awaitClose {
-                connectivityManager.unregisterNetworkCallback(networkStatusCallback)
+
+            override fun onLost(network: Network) {
+                trySend(NetworkStatus.Lost).isSuccess
             }
+
+
         }
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        connectivityManager.registerDefaultNetworkCallback(networkStatusCallback)
 
+        awaitClose {
+            connectivityManager.unregisterNetworkCallback(networkStatusCallback)
+        }
+    }
 
 
 }

@@ -20,6 +20,6 @@ class NetworkStatusViewModel(networkStatusTracker: NetworkStatusTracker) : ViewM
     val state = networkStatusTracker.networkStatus.map(
         onAvailable = { MyState.Fetched },
         onLost = { MyState.Lost }
-    ).debounce(500).asLiveData(Dispatchers.IO)
+    ).debounce(700).asLiveData(Dispatchers.IO)
 
 }

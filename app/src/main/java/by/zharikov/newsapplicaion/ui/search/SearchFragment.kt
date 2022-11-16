@@ -40,9 +40,10 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
 
     private var _binding: FragmentSearchBinding? = null
     private val mBinding get() = _binding!!
-    lateinit var articles: List<Article>
+    private lateinit var articles: List<Article>
     private lateinit var searchViewModel: SearchViewModel
     private lateinit var entityArticle: EntityArticle
+    private var uiArticles = mutableListOf<UiArticle>()
     private val pref: SharedPreferences by lazy {
         requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
     }
@@ -86,7 +87,17 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
             this,
             SearchViewModelFactory(newsRepository, articleEntityRepository)
         )[SearchViewModel::class.java]
-
+        articleAdapter =
+            ArticleAdapter(
+                uiArticles,
+                this,
+                this,
+                this
+            )
+        mBinding.searchRecycler.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = articleAdapter
+        }
 
         var job: Job? = null
         mBinding.edSearch.addTextChangedListener { text ->
@@ -104,39 +115,7 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
                             if (it.toString().isNotEmpty()) {
                                 searchViewModel.getNews(it.toString())
 
-                                searchViewModel.newsModel.observe(viewLifecycleOwner) { response ->
-                                    mBinding.apply {
-                                        searchProgressBar.visibility = View.INVISIBLE
-                                        searchRecycler.visibility = View.VISIBLE
-                                        buttonRetryConnection.visibility = View.INVISIBLE
-                                        imageView.visibility = View.INVISIBLE
-                                        connectText.visibility = View.INVISIBLE
-                                        connectDescriptionText.visibility = View.INVISIBLE
-                                    }
-                                    articles = response.articles
-                                    val uiArticles = map(articles as MutableList<Article>)
-                                    articleAdapter =
-                                        ArticleAdapter(
-                                            uiArticles,
-                                            this@SearchFragment,
-                                            this@SearchFragment,
-                                            this@SearchFragment
-                                        )
-                                    mBinding.searchRecycler.apply {
-                                        layoutManager = LinearLayoutManager(requireContext())
-                                        adapter = articleAdapter
-                                    }
-
-
-                                }
-                                searchViewModel.errorMessage.observe(viewLifecycleOwner) { response ->
-                                    Toast.makeText(
-                                        requireContext(),
-                                        "Request error",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    Log.d("CheckData", "Error: $response")
-                                }
+                                observeArticle()
 
                             }
                         }
@@ -158,6 +137,42 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
 
         mBinding.buttonRetryConnection.setOnClickListener {
             view.findNavController().navigate(R.id.action_searchFragment_self)
+        }
+    }
+
+    private fun observeArticle() {
+        searchViewModel.newsModel.observe(viewLifecycleOwner) { response ->
+            mBinding.apply {
+                searchProgressBar.visibility = View.INVISIBLE
+                searchRecycler.visibility = View.VISIBLE
+                buttonRetryConnection.visibility = View.INVISIBLE
+                imageView.visibility = View.INVISIBLE
+                connectText.visibility = View.INVISIBLE
+                connectDescriptionText.visibility = View.INVISIBLE
+            }
+            articles = response.articles
+            uiArticles = map(articles as MutableList<Article>)
+            articleAdapter =
+                ArticleAdapter(
+                    uiArticles,
+                    this@SearchFragment,
+                    this@SearchFragment,
+                    this@SearchFragment
+                )
+            mBinding.searchRecycler.apply {
+                layoutManager = LinearLayoutManager(requireContext())
+                adapter = articleAdapter
+            }
+
+
+        }
+        searchViewModel.errorMessage.observe(viewLifecycleOwner) { response ->
+            Toast.makeText(
+                requireContext(),
+                "Request error",
+                Toast.LENGTH_SHORT
+            ).show()
+            Log.d("CheckData", "Error: $response")
         }
     }
 
@@ -213,6 +228,11 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
 
         val shareIntent = Intent.createChooser(sendIntent, null)
         startActivity(shareIntent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        _binding = null
     }
 
 }

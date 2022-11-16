@@ -36,10 +36,12 @@ class SettingAdapter(
         if (settings[1].switcher?.isChecked == true) {
             settings[0].switcher?.isChecked = false
             settings[0].switcher?.isEnabled = false
-        } else{
+        } else {
             settings[0].switcher?.isEnabled = true
-            if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) settings[0].switcher?.isChecked = true
-            else if(AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_NO) settings[0].switcher?.isChecked = false
+            if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) settings[0].switcher?.isChecked =
+                true
+            else if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_NO) settings[0].switcher?.isChecked =
+                false
         }
 
         holder.itemView.apply {
@@ -51,10 +53,12 @@ class SettingAdapter(
                     if (settings[1].switcher?.isChecked == true) {
                         settings[0].switcher?.isChecked = false
                         settings[0].switcher?.isEnabled = false
-                    } else{
+                    } else {
                         settings[0].switcher?.isEnabled = true
-                        if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) settings[0].switcher?.isChecked = true
-                        else if(AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_NO) settings[0].switcher?.isChecked = false
+                        if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) settings[0].switcher?.isChecked =
+                            true
+                        else if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_NO) settings[0].switcher?.isChecked =
+                            false
                     }
 
                 }

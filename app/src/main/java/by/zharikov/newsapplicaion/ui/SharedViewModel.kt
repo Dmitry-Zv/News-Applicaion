@@ -12,10 +12,11 @@ class SharedViewModel : ViewModel() {
     val articles = MutableLiveData<List<Article>>()
     private val _isCheckedPosition0 = MutableLiveData<Boolean>()
     val isCheckedPosition0: LiveData<Boolean>
-    get() = _isCheckedPosition0
+        get() = _isCheckedPosition0
     private val _isCheckedPosition1 = MutableLiveData<Boolean>()
     val isCheckedPosition1: LiveData<Boolean>
         get() = _isCheckedPosition1
+
 
     fun setState(state: MyState) {
         this.state.value = state
@@ -29,12 +30,14 @@ class SharedViewModel : ViewModel() {
         this.articles.value = articles
     }
 
-    fun setStateIsCheckedForPosition0(isChecked: Boolean){
+    fun setStateIsCheckedForPosition0(isChecked: Boolean) {
         _isCheckedPosition0.value = isChecked
     }
 
 
-    fun setStateIsCheckedForPosition1(isChecked: Boolean){
+    fun setStateIsCheckedForPosition1(isChecked: Boolean) {
         _isCheckedPosition1.value = isChecked
     }
+
+
 }
