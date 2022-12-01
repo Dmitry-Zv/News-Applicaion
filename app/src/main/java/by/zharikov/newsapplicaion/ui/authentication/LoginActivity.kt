@@ -28,9 +28,14 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var viewModel: LoginViewModel
     private lateinit var customAlertDialogRecoveryPasswordBinding: CustomAlertDialogRecoveryPasswordBinding
     private lateinit var launcher: ActivityResultLauncher<Intent>
+
     private val prefSignIn: SharedPreferences by lazy {
         getSharedPreferences("SIGN_STATE", Context.MODE_PRIVATE)
     }
+    private val prefFirstRunning: SharedPreferences by lazy {
+        getSharedPreferences("FIRST_RUNNING", Context.MODE_PRIVATE)
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,9 +69,11 @@ class LoginActivity : AppCompatActivity() {
 
         mBinding.buttonLogin.setOnClickListener {
             prefSignIn.edit().putBoolean("SIGN_IN_CHOICE", true).apply()
+            prefFirstRunning.edit().putBoolean("IS_FIRST_RUN", true).apply()
 
             var job: Job? = null
             job?.cancel()
+
 
 
             job = MainScope().launch {
@@ -75,6 +82,7 @@ class LoginActivity : AppCompatActivity() {
                 login()
                 mBinding.progressBar.visibility = View.INVISIBLE
             }
+
 
         }
         mBinding.signUpText.setOnClickListener {
@@ -87,16 +95,20 @@ class LoginActivity : AppCompatActivity() {
         }
 
         mBinding.signWithGoogle.setOnClickListener {
+            prefFirstRunning.edit().putBoolean("IS_FIRST_RUN", true).apply()
             val connectivityManager =
                 getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val isConnected = connectivityManager.activeNetwork != null
             if (isConnected) {
+
                 Log.d("CheckSignConnect", "Google")
                 prefSignIn.edit().putBoolean("SIGN_IN_CHOICE", false).apply()
                 viewModel.signInWithGoogle()
+
                 viewModel.intent.observe(this) {
                     launcher.launch(it)
                 }
+
             } else {
                 Snackbar.make(mBinding.root, "Connection is lost!", Snackbar.LENGTH_SHORT)
                     .show()
@@ -142,6 +154,7 @@ class LoginActivity : AppCompatActivity() {
 
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()

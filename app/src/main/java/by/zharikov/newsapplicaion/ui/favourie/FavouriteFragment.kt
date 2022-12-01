@@ -16,15 +16,19 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import by.zharikov.newsapplicaion.R
 import by.zharikov.newsapplicaion.adapter.ArticleAdapter
 import by.zharikov.newsapplicaion.data.model.Article
 import by.zharikov.newsapplicaion.data.model.EntityArticle
 import by.zharikov.newsapplicaion.data.model.UiArticle
+import by.zharikov.newsapplicaion.databinding.CustomToolBarLayoutBinding
 import by.zharikov.newsapplicaion.databinding.FragmentFavourieBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
 import by.zharikov.newsapplicaion.ui.SharedViewModel
 import by.zharikov.newsapplicaion.utils.*
+import by.zharikov.newsapplicaion.worker.UploadWorker
 
 
 class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
@@ -42,6 +46,14 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
     private val articleToEntityArticle = ArticleToEntityArticle()
     private val entityArticleToArticle = EntityArticleToArticle()
     private val sharedViewModel: SharedViewModel by activityViewModels()
+    private lateinit var toolBarSetting: ToolBarSetting
+    private var _customToolBarLayoutBinding: CustomToolBarLayoutBinding? = null
+
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        toolBarSetting = context as ToolBarSetting
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,6 +83,8 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        _customToolBarLayoutBinding = CustomToolBarLayoutBinding.inflate(layoutInflater)
+        toolBarSetting.setUpToolBar("Favourite", Constants.FRAGMENT_FAVOURITE)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
         val counter = 0
         sharedViewModel.setCounter(counter)
@@ -93,7 +107,7 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
             val articles = mapFromEntityToArticle(entityArticles)
             uiArticles = map(articles as MutableList<Article>).asReversed()
             sharedViewModel.setUiListArticle(articles)
-            mBinding.headerCount.text = uiArticles.size.toString()
+            sharedViewModel.setCountItemFav(uiArticles.size)
             articleAdapter =
                 ArticleAdapter(uiArticles, this@FavouriteFragment, this@FavouriteFragment, this)
             mBinding.recyclerFavourite.apply {
@@ -104,8 +118,6 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
 
             if (entityArticles.isEmpty()) {
                 mBinding.apply {
-                    favouriteTitleHeader.visibility = View.INVISIBLE
-                    headerCount.visibility = View.INVISIBLE
                     recyclerFavourite.visibility = View.INVISIBLE
                     favouriteImage.visibility = View.VISIBLE
                     favouriteTitle.visibility = View.VISIBLE
@@ -114,8 +126,6 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
 
             } else {
                 mBinding.apply {
-                    favouriteTitleHeader.visibility = View.VISIBLE
-                    headerCount.visibility = View.VISIBLE
                     recyclerFavourite.visibility = View.VISIBLE
                     favouriteImage.visibility = View.INVISIBLE
                     favouriteTitle.visibility = View.INVISIBLE
@@ -153,8 +163,10 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
     }
 
     override fun onFavIconClickListener(uiArticle: UiArticle) {
-        pref.edit().putBoolean(uiArticle.article.title, uiArticle.isLiked)
-            .apply()
+        uiArticle.isLiked.let {
+            pref.edit().putBoolean(uiArticle.article.title, it)
+                .apply()
+        }
         Log.d("idTitle", uiArticle.article.title.toString())
         entityArticle = articleToEntityArticle.map(uiArticle.article)
         favouriteViewModel.deleteArticle(entityArticle.title.toString())
@@ -166,6 +178,8 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
             articleAdapter.updateArticles(uiArticles)
 
         }
+
+        setOnTimeWorkRequest()
 
 
     }
@@ -184,6 +198,13 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
+    }
+
+    private fun setOnTimeWorkRequest() {
+        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .build()
+        WorkManager.getInstance(requireContext())
+            .enqueue(uploadRequest)
     }
 }
 

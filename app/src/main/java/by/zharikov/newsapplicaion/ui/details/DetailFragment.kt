@@ -15,12 +15,17 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import by.zharikov.newsapplicaion.R
 import by.zharikov.newsapplicaion.data.model.UiArticle
 import by.zharikov.newsapplicaion.databinding.FragmentDetailBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
 import by.zharikov.newsapplicaion.ui.SharedViewModel
 import by.zharikov.newsapplicaion.utils.ArticleToEntityArticle
+import by.zharikov.newsapplicaion.utils.Constants
+import by.zharikov.newsapplicaion.utils.ToolBarSetting
+import by.zharikov.newsapplicaion.worker.UploadWorker
 import com.bumptech.glide.Glide
 
 
@@ -36,6 +41,13 @@ class DetailFragment : Fragment() {
     private lateinit var viewModel: DetailViewModel
     private var isLike = false
     private val sharedViewModel: SharedViewModel by activityViewModels()
+    private lateinit var toolBarSetting: ToolBarSetting
+
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        toolBarSetting = context as ToolBarSetting
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -47,6 +59,7 @@ class DetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        toolBarSetting.setUpToolBar("Detail", Constants.FRAGMENT_DETAILED)
         var counter = pref.getInt("Counter", 0)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
         viewModel = ViewModelProvider(
@@ -55,6 +68,7 @@ class DetailFragment : Fragment() {
         )[DetailViewModel::class.java]
         val articleArg = bundleArgs.article
         articleArg.let { article ->
+
             if (article.urlToImage == null) mBinding.headerImage.setImageResource(R.drawable.news)
             else article.urlToImage.let {
                 Glide.with(this).load(article.urlToImage).into(mBinding.headerImage)
@@ -93,8 +107,12 @@ class DetailFragment : Fragment() {
                 viewModel.deleteArticle(entityArticle.title.toString())
                 Log.d("Title", entityArticle.title.toString())
                 Toast.makeText(requireContext(), "DELETED", Toast.LENGTH_SHORT).show()
+
                 pref.edit().putBoolean(articleArg.title, uiArticle.isLiked)
                     .apply()
+
+
+
                 Log.d("idTitle", articleArg.title.toString())
                 sharedViewModel.articles.observe(viewLifecycleOwner) { articles ->
                     if (!articles.contains(uiArticle.article)) {
@@ -102,6 +120,7 @@ class DetailFragment : Fragment() {
                     }
                 }
             }
+            setOnTimeWorkRequest()
 
             sharedViewModel.setCounter(counter)
             pref.edit().putInt("Counter", counter).apply()
@@ -134,5 +153,13 @@ class DetailFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
+    }
+
+
+    private fun setOnTimeWorkRequest() {
+        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .build()
+        WorkManager.getInstance(requireContext())
+            .enqueue(uploadRequest)
     }
 }

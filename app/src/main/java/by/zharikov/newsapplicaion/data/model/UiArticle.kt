@@ -2,6 +2,12 @@ package by.zharikov.newsapplicaion.data.model
 
 
 data class UiArticle(
-    val article: Article,
-    var isLiked: Boolean = false
-)
+    var article: Article,
+    var isLiked: Boolean
+) {
+    constructor() : this(
+        Article(
+            0, "", "", "", "", null, "", "", ""
+        ), false
+    )
+}

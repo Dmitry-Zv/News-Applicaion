@@ -14,4 +14,7 @@ interface ArticleDao {
     @Query("DELETE FROM article WHERE title = :title")
     suspend fun deleteArticle(title: String)
 
+    @Query("DELETE FROM article")
+    suspend fun deleteAllArticle()
+
 }

@@ -10,4 +10,7 @@ data class Source(
     @ColumnInfo(name = "source_id")
     val id: String?,
     val name: String
-) : Serializable
+) : Serializable {
+
+    constructor() : this("", "")
+}

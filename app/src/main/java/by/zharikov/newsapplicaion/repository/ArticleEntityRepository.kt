@@ -17,4 +17,8 @@ class ArticleEntityRepository(private val context: Context) {
         ArticleDatabase.geDatabase(context).getArticleDao().insertArticle(article = article)
     }
 
+    suspend fun repDeleteAllArticle() {
+        ArticleDatabase.geDatabase(context).getArticleDao().deleteAllArticle()
+    }
+
 }

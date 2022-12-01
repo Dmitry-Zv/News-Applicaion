@@ -11,6 +11,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="teal">#0DCDAA</color>
     <color name="grey_black">#262627</color>
+    <color name="transparent">#00000000</color>
 
 //Night
     <color name="purple_200_night">#FFBB86FC</color>

@@ -150,6 +150,7 @@ class RegistrationRepository(private val context: Context) {
                 FirebaseAuth.getInstance().currentUser?.let {
                     CoroutineScope(Dispatchers.IO).launch {
                         database.child("user").child(it.uid).removeValue().await()
+                        database.child("Article").child(it.uid).removeValue().await()
                         Log.d("dBASE", database.child("user").child(it.uid).toString())
                     }
                 }
@@ -175,7 +176,11 @@ class RegistrationRepository(private val context: Context) {
 
     }
 
-    fun changeEmail(credential: AuthCredential, email: String) {
+    fun changeEmail(
+        credential: AuthCredential,
+        email: String,
+        profileName: String
+    ) {
         auth.currentUser?.reauthenticate(credential)?.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 auth.currentUser?.updateEmail(email)?.addOnCompleteListener { taskChange ->
@@ -187,12 +192,18 @@ class RegistrationRepository(private val context: Context) {
                         ).show()
                         auth.currentUser?.sendEmailVerification()
                             ?.addOnCompleteListener { taskVerified ->
-                                if (taskVerified.isSuccessful) Toast.makeText(
-                                    context,
-                                    "Verification send",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                else Toast.makeText(
+                                if (taskVerified.isSuccessful) {
+                                    auth.currentUser?.let {
+                                        database.child("user").child(it.uid).setValue(
+                                            User(profileName, email)
+                                        )
+                                    }
+                                    Toast.makeText(
+                                        context,
+                                        "Verification send",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else Toast.makeText(
                                     context,
                                     "Error: ${taskVerified.exception?.message}",
                                     Toast.LENGTH_SHORT
@@ -247,7 +258,9 @@ class RegistrationRepository(private val context: Context) {
         auth.currentUser?.uid
             ?.let { it ->
                 database.child("user").child(it).get().addOnSuccessListener { data ->
-                    user.value = data.getValue<User>()!!
+                    if (data.exists()) {
+                        user.value = data.getValue<User>()!!
+                    }
                     //  Log.d("USER_INFO", user.displayName.toString())
                 }.addOnFailureListener {
                     Log.d("FIREBASE_ERROR", "${it.message}")
@@ -278,28 +291,34 @@ class RegistrationRepository(private val context: Context) {
                             displayName = account.displayName,
                             email = account.email.toString()
                         )
-                        database.child("user")
-                            .child(it.uid)
-                            .setValue(user)
-                            .addOnCompleteListener {
+                        database.child("user").child(it.uid).get()
+                            .addOnSuccessListener { dataSnapshot ->
+                                if (!dataSnapshot.exists()) {
+                                    database.child("user")
+                                        .child(it.uid)
+                                        .setValue(user)
+                                        .addOnCompleteListener {
 
-                                if (it.isSuccessful) Toast.makeText(
-                                    context,
-                                    "Add user: ${user.displayName}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                else Toast.makeText(
-                                    context,
-                                    "Error: ${it.exception?.message}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                            if (it.isSuccessful) Toast.makeText(
+                                                context,
+                                                "Add user: ${user.displayName}",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            else Toast.makeText(
+                                                context,
+                                                "Error: ${it.exception?.message}",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                }
                             }
+
                     }
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Successfully logged in", Toast.LENGTH_SHORT)
-                            .show()
-                        goToMainActivity()
-                    }
+                }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Successfully logged in", Toast.LENGTH_SHORT)
+                        .show()
+                    goToMainActivity()
                 }
             } catch (e: ApiException) {
                 withContext(Dispatchers.Main) {
@@ -309,5 +328,6 @@ class RegistrationRepository(private val context: Context) {
             }
         }
     }
+
 
 }
