@@ -18,6 +18,8 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import by.zharikov.newsapplicaion.R
 import by.zharikov.newsapplicaion.adapter.ArticleAdapter
 import by.zharikov.newsapplicaion.adapter.TagAdapter
@@ -29,6 +31,7 @@ import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
 import by.zharikov.newsapplicaion.repository.NewsRepository
 import by.zharikov.newsapplicaion.ui.SharedViewModel
 import by.zharikov.newsapplicaion.utils.*
+import by.zharikov.newsapplicaion.worker.UploadWorker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -54,7 +57,14 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
     private lateinit var tagUiList: List<TagModelUi>
     private var tagModelUi: TagModelUi? = null
     private var flag = false
+    private lateinit var toolBarSetting: ToolBarSetting
 
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        toolBarSetting = context as ToolBarSetting
+
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -83,10 +93,11 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
 
     }
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        toolBarSetting.setUpToolBar("News", Constants.FRAGMENT_MAIN)
         val retrofitNews = RetrofitNews()
         val newsRepository = NewsRepository(retrofitNews)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
@@ -122,6 +133,7 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
         articleAdapter = ArticleAdapter(uiListArticle, this, this, this)
         mBinding.newsAdapter.adapter = articleAdapter
         mBinding.progressBar.visibility = View.VISIBLE
+
 
 
         sharedViewModel.state.observe(viewLifecycleOwner) { state ->
@@ -173,8 +185,10 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
     }
 
     override fun onFavIconClickListener(uiArticle: UiArticle) {
+
         pref.edit().putBoolean(uiArticle.article.title, uiArticle.isLiked)
             .apply()
+
         Log.d("idTitle", uiArticle.article.title.toString())
         val entityArticle = articleToEntityArticle.map(uiArticle.article)
 
@@ -202,6 +216,7 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
             sharedViewModel.setCounter(counter)
             pref.edit().putInt("Counter", counter).apply()
         }
+        setOnTimeWorkRequest()
 
     }
 
@@ -307,6 +322,14 @@ class MainFragment : Fragment(), CellClickListener, FavIconClickListener, ShareI
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
+    }
+
+
+    private fun setOnTimeWorkRequest() {
+        val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
+            .build()
+        WorkManager.getInstance(requireContext())
+            .enqueue(uploadRequest)
     }
 
 }

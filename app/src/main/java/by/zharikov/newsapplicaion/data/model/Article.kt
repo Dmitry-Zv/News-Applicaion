@@ -17,4 +17,7 @@ data class Article(
     val url: String?,
     val urlToImage: String?
 
-) : Serializable
+) : Serializable {
+
+    constructor() : this(0, "", "", "", "", null, "", "", "")
+}

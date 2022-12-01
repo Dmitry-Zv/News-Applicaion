@@ -10,8 +10,6 @@ import android.view.ViewGroup
 import android.webkit.WebViewClient
 import androidx.annotation.RequiresApi
 import androidx.navigation.fragment.navArgs
-import androidx.webkit.WebSettingsCompat
-import androidx.webkit.WebViewFeature
 import by.zharikov.newsapplicaion.data.model.Article
 import by.zharikov.newsapplicaion.databinding.FragmentWebBinding
 
@@ -27,7 +25,6 @@ class WebFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
 
         _binding = FragmentWebBinding.inflate(inflater, container, false)
         return mBinding.root
@@ -41,11 +38,7 @@ class WebFragment : Fragment() {
         val webSetting = mBinding.webView.settings
         webSetting.javaScriptEnabled = true
         article = bundleArgs.articleArg
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-                WebSettingsCompat.setForceDark(webSetting, WebSettingsCompat.FORCE_DARK_ON)
-            }
-        }
+
         mBinding.webView.loadUrl(article.url.toString())
     }
 

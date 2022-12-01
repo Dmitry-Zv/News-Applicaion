@@ -17,6 +17,13 @@ class SharedViewModel : ViewModel() {
     val isCheckedPosition1: LiveData<Boolean>
         get() = _isCheckedPosition1
 
+    private val _countItemSave = MutableLiveData<Int>()
+    val countItemSave: LiveData<Int>
+        get() = _countItemSave
+
+    fun setCountItemFav(countItemSave: Int) {
+        _countItemSave.value = countItemSave
+    }
 
     fun setState(state: MyState) {
         this.state.value = state

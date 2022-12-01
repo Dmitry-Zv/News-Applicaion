@@ -36,6 +36,21 @@ class SearchViewModel(
         }
     }
 
+    fun getArticle(countryCode: String) {
+        viewModelScope.launch {
+            try {
+                val response = newsRepository.newsGetTopHeadlines(countryCode, pageNumber)
+
+                if (response.isSuccessful) {
+                    _newsViewModel.postValue(response.body())
+                }
+            } catch (e: Exception) {
+                _errorMessage.postValue(e.message)
+            }
+
+        }
+    }
+
 
     fun insertArticle(article: EntityArticle) {
         viewModelScope.launch {
