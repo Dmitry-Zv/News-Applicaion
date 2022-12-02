@@ -69,7 +69,6 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
     private var _navHeaderBinding: NavHeaderBinding? = null
     private val navHeaderBinding get() = _navHeaderBinding!!
     private val articleToEntityArticle = ArticleToEntityArticle()
-    private var imageUri: String? = ""
     private lateinit var settingAdapter: SettingAdapter
     private val sharedViewModel: SharedViewModel by lazy {
         ViewModelProvider(this)[SharedViewModel::class.java]
@@ -150,6 +149,12 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
             launcher.launch(Intent.createChooser(photoPickerIntent, "Select image from here..."))
 
         }
+        if(prefSignIn.getBoolean("SIGN_IN_CHOICE", false)){
+            mBinding.navView.inflateMenu(R.menu.drawer_list)
+        } else{
+            mBinding.navView.inflateMenu(R.menu.drawer_list_google_authenticator)
+        }
+
         mBinding.navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.change_email -> {
@@ -346,12 +351,11 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                 profileName.text = user.displayName
                 profileEmail.text = user.email
                 uploadDownloadImageRepository.data.observe(this@MainActivity) {
-                    if (it.isNotEmpty()) {
-                        val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
-                        imageProfile.setImageBitmap(bitmap)
-                    } else {
-                        imageProfile.setImageResource(R.drawable.profile_image)
-                    }
+                    val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                    imageProfile.setImageBitmap(bitmap)
+                }
+                uploadDownloadImageRepository.exception.observe(this@MainActivity) {
+                    imageProfile.setImageResource(R.drawable.profile_image)
                 }
             }
 
@@ -393,6 +397,7 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                                 )
                             )
                         }
+                        uploadDownloadImageRepository.deleteImage()
                     }
                     .setNegativeButton("Cancel") { dialog, _ ->
                         dialog.dismiss()
@@ -425,6 +430,7 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                                 )
                             )
                         }
+                        uploadDownloadImageRepository.deleteImage()
                     }
                     .show()
 

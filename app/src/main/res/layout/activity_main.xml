@@ -22,8 +22,9 @@
             app:liftOnScroll="true">
 
 
-            <include android:id="@+id/custom_tool_bar"
-                layout="@layout/custom_tool_bar_layout"/>
+            <include
+                android:id="@+id/custom_tool_bar"
+                layout="@layout/custom_tool_bar_layout" />
 
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -44,6 +45,7 @@
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_nav"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -55,8 +57,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:fitsSystemWindows="true"
-        app:menu="@menu/drawer_list" />
+        android:fitsSystemWindows="true" />
 
 
 </androidx.drawerlayout.widget.DrawerLayout>

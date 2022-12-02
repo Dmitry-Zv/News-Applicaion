@@ -84,6 +84,7 @@ class LoginActivity : AppCompatActivity() {
             }
 
 
+
         }
         mBinding.signUpText.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
