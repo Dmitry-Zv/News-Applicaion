@@ -13,6 +13,7 @@ class UploadDownloadImageRepository(private val context: Context) {
     private val storage = Firebase.storage
     private val auth = Firebase.auth
     val data = MutableLiveData<ByteArray>()
+    val exception = MutableLiveData<Exception>()
 
 
     fun uploadImage(data: Uri) {
@@ -35,6 +36,17 @@ class UploadDownloadImageRepository(private val context: Context) {
         profileImageRef.getBytes(ONE_MEGABYTE).addOnSuccessListener {
             Toast.makeText(context, "Download image", Toast.LENGTH_SHORT).show()
             data.value = it
+        }.addOnFailureListener {
+            exception.value = it
+            Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun deleteImage() {
+        val storageRef = storage.reference
+        val profileImageRef = storageRef.child("images/${auth.currentUser?.uid}/profile.jpg")
+        profileImageRef.delete().addOnSuccessListener {
+            Toast.makeText(context, "Image deleted", Toast.LENGTH_SHORT).show()
         }.addOnFailureListener {
             Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
         }
