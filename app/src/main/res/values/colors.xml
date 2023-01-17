@@ -13,7 +13,7 @@
     <color name="grey_black">#262627</color>
     <color name="transparent">#00000000</color>
 
-//Night
+    //Night
     <color name="purple_200_night">#FFBB86FC</color>
     <color name="purple_500_night">#FF6200EE</color>
     <color name="purple_700_night">#FF3700B3</color>

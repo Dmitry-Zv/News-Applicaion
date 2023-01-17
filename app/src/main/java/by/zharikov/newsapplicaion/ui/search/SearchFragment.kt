@@ -8,13 +8,13 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.SearchView
-import androidx.fragment.app.Fragment
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.core.os.bundleOf
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -29,10 +29,16 @@ import by.zharikov.newsapplicaion.connectivity.MyState
 import by.zharikov.newsapplicaion.data.model.Article
 import by.zharikov.newsapplicaion.data.model.EntityArticle
 import by.zharikov.newsapplicaion.data.model.UiArticle
+import by.zharikov.newsapplicaion.data.model.UiState
 import by.zharikov.newsapplicaion.databinding.FragmentSearchBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
+import by.zharikov.newsapplicaion.repository.ArticlePreferencesRepository
 import by.zharikov.newsapplicaion.repository.NewsRepository
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModel
 import by.zharikov.newsapplicaion.ui.SharedViewModel
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesUseCase
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModelFactory
+import by.zharikov.newsapplicaion.usecase.article_retrofit_use_case.ArticleRetrofitUseCase
 import by.zharikov.newsapplicaion.utils.*
 import by.zharikov.newsapplicaion.worker.UploadWorker
 import kotlinx.coroutines.Job
@@ -45,12 +51,15 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
 
     private var _binding: FragmentSearchBinding? = null
     private val mBinding get() = _binding!!
-    private lateinit var articles: List<Article>
     private lateinit var searchViewModel: SearchViewModel
+    private lateinit var viewModel: ArticlePreferencesViewModel
     private lateinit var entityArticle: EntityArticle
     private var uiArticles = mutableListOf<UiArticle>()
     private val pref: SharedPreferences by lazy {
         requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
+    }
+    private val prefCounter: SharedPreferences by lazy {
+        requireContext().getSharedPreferences("COUNTER_SHARED_PREF", Context.MODE_PRIVATE)
     }
     private lateinit var articleAdapter: ArticleAdapter
     private val articleToEntityArticle = ArticleToEntityArticle()
@@ -100,10 +109,19 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
         val retrofitNews = RetrofitNews()
         val newsRepository = NewsRepository(retrofitNews)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
-        counter = pref.getInt("Counter", 0)
+        val articlePreferenceRepository = ArticlePreferencesRepository(pref)
+        val articlePreferencesUseCase =
+            ArticlePreferencesUseCase(articlePreferenceRepository, articleEntityRepository)
+        val articleRetrofitUseCase = ArticleRetrofitUseCase(newsRepository = newsRepository)
+        viewModel = ViewModelProvider(
+            this,
+            ArticlePreferencesViewModelFactory(articlePreferencesUseCase)
+        )[ArticlePreferencesViewModel::class.java]
+
+        counter = prefCounter.getInt("Counter", 0)
         searchViewModel = ViewModelProvider(
             this,
-            SearchViewModelFactory(newsRepository, articleEntityRepository)
+            SearchViewModelFactory(articleRetrofitUseCase)
         )[SearchViewModel::class.java]
         articleAdapter =
             ArticleAdapter(
@@ -117,22 +135,15 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
             adapter = articleAdapter
         }
         mBinding.searchProgressBar.visibility = View.VISIBLE
-        var job: Job? = null
         sharedViewModel.state.observe(viewLifecycleOwner) { state ->
             if (state == MyState.Fetched) {
-                job?.cancel()
-
-                job = MainScope().launch {
-
-                    delay(500)
-                    searchViewModel.getArticle("us")
-                    observeArticle()
-                }
-
+                searchViewModel.getArticles("us")
+                observeArticle()
             } else {
                 recreateUi()
             }
         }
+
 
 
 
@@ -143,53 +154,53 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
     }
 
     private fun observeArticle() {
-        searchViewModel.newsModel.observe(viewLifecycleOwner) { response ->
-            mBinding.apply {
-                searchProgressBar.visibility = View.INVISIBLE
-                searchRecycler.visibility = View.VISIBLE
-                buttonRetryConnection.visibility = View.INVISIBLE
-                imageView.visibility = View.INVISIBLE
-                connectText.visibility = View.INVISIBLE
-                connectDescriptionText.visibility = View.INVISIBLE
+        collectLatestLifecycleFlow(searchViewModel.uiState) { uiState ->
+            when (uiState) {
+                is UiState.Initial -> mBinding.searchProgressBar.visibility = View.VISIBLE
+                is UiState.ShowArticles -> {
+                    mBinding.apply {
+                        searchProgressBar.visibility = View.INVISIBLE
+                        searchRecycler.visibility = View.VISIBLE
+                        buttonRetryConnection.visibility = View.INVISIBLE
+                        imageView.visibility = View.INVISIBLE
+                        connectText.visibility = View.INVISIBLE
+                        connectDescriptionText.visibility = View.INVISIBLE
+                    }
+                    uiArticles = map(uiState.articles.toMutableList())
+                    articleAdapter =
+                        ArticleAdapter(
+                            uiArticles,
+                            this@SearchFragment,
+                            this@SearchFragment,
+                            this@SearchFragment
+                        )
+                    mBinding.searchRecycler.apply {
+                        layoutManager = LinearLayoutManager(requireContext())
+                        adapter = articleAdapter
+                    }
+                }
+                is UiState.Error -> Toast.makeText(
+                    requireContext(),
+                    "Error: ${uiState.exception}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-            articles = response.articles
-            uiArticles = map(articles as MutableList<Article>)
-            articleAdapter =
-                ArticleAdapter(
-                    uiArticles,
-                    this@SearchFragment,
-                    this@SearchFragment,
-                    this@SearchFragment
-                )
-            mBinding.searchRecycler.apply {
-                layoutManager = LinearLayoutManager(requireContext())
-                adapter = articleAdapter
-            }
-
-
         }
-        searchViewModel.errorMessage.observe(viewLifecycleOwner) { response ->
-            Toast.makeText(
-                requireContext(),
-                "Request error",
-                Toast.LENGTH_SHORT
-            ).show()
-            Log.d("CheckData", "Error: $response")
-        }
+
     }
 
 
     override fun onCellClickListener(article: Article) {
         val bundle = bundleOf("article" to article)
         bundle.putInt("argInt", 2)
-        view?.findNavController()?.navigate(R.id.action_searchFragment_to_detailFragment, bundle)
+        view?.findNavController()
+            ?.navigate(R.id.action_searchFragment_to_detailFragment, bundle)
     }
 
     private fun map(articleList: MutableList<Article>): MutableList<UiArticle> {
         val uiList = mutableListOf<UiArticle>()
-        val isLiked = false
         for (article in articleList) {
-            uiList.add(UiArticle(article, pref.getBoolean(article.title, isLiked)))
+            uiList.add(UiArticle(article, pref.getBoolean(article.url, false)))
         }
         return uiList
     }
@@ -197,29 +208,25 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
 
     override fun onFavIconClickListener(uiArticle: UiArticle) {
 
-        pref.edit().putBoolean(uiArticle.article.title, uiArticle.isLiked)
-            .apply()
 
         Log.d("idTitle", uiArticle.article.title.toString())
         entityArticle = articleToEntityArticle.map(uiArticle.article)
         if (uiArticle.isLiked) {
-            searchViewModel.insertArticle(entityArticle)
-            Toast.makeText(requireContext(), "SAVED", Toast.LENGTH_SHORT).show()
+            viewModel.addArticle(uiArticle.article)
             counter++
-            sharedViewModel.setCounter(counter)
-            pref.edit().putInt("Counter", counter).apply()
         } else {
-            searchViewModel.deleteArticle(entityArticle.title.toString())
-            Toast.makeText(requireContext(), "DELETED", Toast.LENGTH_SHORT).show()
-            sharedViewModel.articles.observe(viewLifecycleOwner) { articles ->
+            viewModel.deleteEntityArticle(uiArticle.article)
+            collectLatestLifecycleFlow(sharedViewModel.articles) { articles ->
                 if (!articles.contains(uiArticle.article)) {
                     if (counter > 0) counter--
                 }
             }
+
+
         }
-        setOnTimeWorkRequest()
         sharedViewModel.setCounter(counter)
-        pref.edit().putInt("Counter", counter).apply()
+        setOnTimeWorkRequest()
+        prefCounter.edit().putInt("Counter", counter).apply()
     }
 
 
@@ -268,10 +275,10 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
                                 mBinding.searchProgressBar.visibility = View.VISIBLE
                         }
                         job = MainScope().launch {
-                            delay(500L)
+                            delay(300L)
                             p0?.let {
                                 if (it.isNotEmpty()) {
-                                    searchViewModel.getNews(it)
+                                    searchViewModel.getArticleQuery(it)
 
                                     observeArticle()
 
@@ -284,6 +291,7 @@ class SearchFragment : Fragment(), CellClickListener, FavIconClickListener, Shar
                         recreateUi()
                     }
                 }
+
                 return false
             }
 

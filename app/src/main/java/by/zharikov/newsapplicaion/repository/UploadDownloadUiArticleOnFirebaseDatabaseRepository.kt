@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import android.widget.Toast
-import androidx.lifecycle.MutableLiveData
 import by.zharikov.newsapplicaion.data.model.Article
 import by.zharikov.newsapplicaion.data.model.EntityArticle
 import by.zharikov.newsapplicaion.data.model.UiArticle
@@ -14,6 +13,8 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class UploadDownloadUiArticleOnFirebaseDatabaseRepository(private val context: Context) {
 
@@ -23,7 +24,8 @@ class UploadDownloadUiArticleOnFirebaseDatabaseRepository(private val context: C
         context.getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
     }
     private val entityArticleToArticle = EntityArticleToArticle()
-    val uiArticleListFromFirebase = MutableLiveData<List<UiArticle>>()
+    private val _uiArticleListFromFirebase = MutableStateFlow(listOf(UiArticle()))
+    val uiArticleListFromFirebase = _uiArticleListFromFirebase.asStateFlow()
 
 
     suspend fun saveDataToFirebase() {
@@ -57,7 +59,7 @@ class UploadDownloadUiArticleOnFirebaseDatabaseRepository(private val context: C
         auth.currentUser?.uid?.let {
             database.child("Article").child(it).get().addOnSuccessListener { data ->
                 if (data.exists()) {
-                    uiArticleListFromFirebase.value = data.getValue<List<UiArticle>>()!!
+                    _uiArticleListFromFirebase.value = data.getValue<List<UiArticle>>()!!
                     Log.d("UI_ARTICLES", uiArticleListFromFirebase.value.toString())
                 }
             }.addOnFailureListener {

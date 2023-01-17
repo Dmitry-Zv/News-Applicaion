@@ -1,82 +1,73 @@
 package by.zharikov.newsapplicaion.ui.main
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import by.zharikov.newsapplicaion.data.model.EntityArticle
-import by.zharikov.newsapplicaion.data.model.NewsModel
-import by.zharikov.newsapplicaion.data.model.TagModelUi
-import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
-import by.zharikov.newsapplicaion.repository.NewsRepository
+import androidx.lifecycle.*
+import by.zharikov.newsapplicaion.data.model.*
+import by.zharikov.newsapplicaion.repository.TagRepository
+import by.zharikov.newsapplicaion.usecase.article_retrofit_use_case.ArticleRetrofitUseCase
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+
 class MainFragmentViewModel(
-    private val newsRepository: NewsRepository,
-    private val articleEntityRepository: ArticleEntityRepository
+    private val articleRetrofitUseCase: ArticleRetrofitUseCase,
+    private val tagRepository: TagRepository
 ) : ViewModel() {
 
-    private val _newsLiveData = MutableLiveData<NewsModel>()
-    val newLiveData: LiveData<NewsModel>
-        get() = _newsLiveData
-    private val _errorMessage = MutableLiveData<String>()
-    val errorMessage: LiveData<String>
-        get() = _errorMessage
+    private val _uiState = MutableStateFlow<UiState>(UiState.Initial)
+    val uiState = _uiState.asStateFlow()
     private val pageNumber = 1
+    private var _tagUiList = MutableStateFlow(listOf<TagModelUi>())
+    val tagUiList = _tagUiList.asStateFlow()
 
-    private val _tagUiList = MutableLiveData<List<TagModelUi>>()
-    val tagUiList: LiveData<List<TagModelUi>>
-        get() = _tagUiList
-
-
-    fun getNew(countryCode: String) {
+    init {
+        getTagUiList()
         viewModelScope.launch {
-            try {
-                val response = newsRepository.newsGetTopHeadlines(countryCode, pageNumber)
-
-                if (response.isSuccessful) {
-                    _newsLiveData.postValue(response.body())
+            articleRetrofitUseCase.resultState.collectLatest { resultState ->
+                when (resultState) {
+                    is by.zharikov.newsapplicaion.usecase.article_retrofit_use_case.Result.SuccessTopHeadlinesArticles -> _uiState.value =
+                        UiState.ShowArticles(resultState.articles)
+                    is by.zharikov.newsapplicaion.usecase.article_retrofit_use_case.Result.SuccessArticleGetTopHeadLinesCategory -> _uiState.value =
+                        UiState.ShowArticles(resultState.articles)
+                    is by.zharikov.newsapplicaion.usecase.article_retrofit_use_case.Result.Error -> _uiState.value =
+                        UiState.Error(resultState.exception)
+                    else -> {}
                 }
-            } catch (e: Exception) {
-                _errorMessage.postValue(e.message)
-            }
-
-        }
-    }
-
-    fun getNewByCategory(countryCode: String, category: String) {
-        viewModelScope.launch {
-            try {
-                val response = newsRepository.newGetTopHeadLinesCategory(
-                    country = countryCode,
-                    category = category
-                )
-                if (response.isSuccessful) {
-                    _newsLiveData.postValue(response.body())
-                }
-            } catch (e: Exception) {
-                _errorMessage.postValue(e.message)
             }
         }
     }
 
-    fun insertArticle(entityArticle: EntityArticle) {
+
+    fun getArticles(countryCode: String) {
         viewModelScope.launch {
-
-            articleEntityRepository.repInsertArticle(entityArticle)
-        }
-
-    }
-
-    fun deleteArticle(title: String) {
-        viewModelScope.launch {
-            articleEntityRepository.repDeleteArticle(title = title)
-
+            articleRetrofitUseCase.invokeGetTopHeadLinesArticle(
+                country = countryCode,
+                pageNumber = pageNumber
+            )
         }
     }
 
-    fun setTagUiList(tagUiList: List<TagModelUi>) {
-        _tagUiList.value = tagUiList
+    fun getArticlesByCategory(countryCode: String, category: String) {
+        viewModelScope.launch {
+            articleRetrofitUseCase.invokeGetTopHeadLinesCategoryArticle(
+                country = countryCode,
+                category = category
+            )
+        }
+    }
+
+
+    fun setTagUiList(tagModelUi: TagModelUi) {
+        viewModelScope.launch {
+            val tagUiList = tagRepository.setTags(tagModelUi)
+            _tagUiList.value = tagUiList
+        }
+    }
+
+    private fun getTagUiList() {
+        viewModelScope.launch {
+            val tagUiList = tagRepository.getTagsBySharedPreferences()
+            _tagUiList.value = tagUiList
+        }
     }
 
 

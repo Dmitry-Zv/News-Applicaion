@@ -3,13 +3,23 @@ package by.zharikov.newsapplicaion.ui
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import by.zharikov.newsapplicaion.connectivity.MyState
 import by.zharikov.newsapplicaion.data.model.Article
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class SharedViewModel : ViewModel() {
-    val state = MutableLiveData<MyState>()
-    val counter = MutableLiveData<Int>()
-    val articles = MutableLiveData<List<Article>>()
+    private val _state = MutableLiveData<MyState>()
+    val state: LiveData<MyState>
+        get() = _state
+    private val _counter = MutableSharedFlow<Int>()
+    val counter = _counter.asSharedFlow()
+    private val _articles = MutableStateFlow(listOf<Article>())
+    val articles = _articles.asStateFlow()
     private val _isCheckedPosition0 = MutableLiveData<Boolean>()
     val isCheckedPosition0: LiveData<Boolean>
         get() = _isCheckedPosition0
@@ -17,24 +27,24 @@ class SharedViewModel : ViewModel() {
     val isCheckedPosition1: LiveData<Boolean>
         get() = _isCheckedPosition1
 
-    private val _countItemSave = MutableLiveData<Int>()
-    val countItemSave: LiveData<Int>
-        get() = _countItemSave
+    private val _countItemSave = MutableSharedFlow<Int>()
+    val countItemSave = _countItemSave.asSharedFlow()
 
     fun setCountItemFav(countItemSave: Int) {
-        _countItemSave.value = countItemSave
+        viewModelScope.launch {
+            _countItemSave.emit(countItemSave)
+        }
     }
 
     fun setState(state: MyState) {
-        this.state.value = state
+        _state.value = state
+
     }
 
     fun setCounter(counter: Int) {
-        this.counter.value = counter
-    }
-
-    fun setUiListArticle(articles: List<Article>) {
-        this.articles.value = articles
+        viewModelScope.launch {
+            _counter.emit(counter)
+        }
     }
 
     fun setStateIsCheckedForPosition0(isChecked: Boolean) {

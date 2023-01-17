@@ -7,9 +7,6 @@
     tools:context=".ui.search.SearchFragment">
 
 
-
-
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/search_recycler"
         android:layout_width="match_parent"
@@ -28,6 +25,8 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:background="@android:color/transparent"
+        android:indeterminate="true"
+        android:indeterminateDrawable="@drawable/progress_bar_black"
         android:visibility="invisible" />
 
     <ImageView

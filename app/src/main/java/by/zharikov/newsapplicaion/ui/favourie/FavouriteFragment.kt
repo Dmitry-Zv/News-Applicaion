@@ -5,13 +5,12 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.os.bundleOf
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
@@ -21,12 +20,16 @@ import androidx.work.WorkManager
 import by.zharikov.newsapplicaion.R
 import by.zharikov.newsapplicaion.adapter.ArticleAdapter
 import by.zharikov.newsapplicaion.data.model.Article
-import by.zharikov.newsapplicaion.data.model.EntityArticle
 import by.zharikov.newsapplicaion.data.model.UiArticle
 import by.zharikov.newsapplicaion.databinding.CustomToolBarLayoutBinding
 import by.zharikov.newsapplicaion.databinding.FragmentFavourieBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
+import by.zharikov.newsapplicaion.repository.ArticlePreferencesRepository
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModel
 import by.zharikov.newsapplicaion.ui.SharedViewModel
+import by.zharikov.newsapplicaion.usecase.UiState
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesUseCase
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModelFactory
 import by.zharikov.newsapplicaion.utils.*
 import by.zharikov.newsapplicaion.worker.UploadWorker
 
@@ -36,18 +39,18 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
 
     private var _binding: FragmentFavourieBinding? = null
     private val mBinding get() = _binding!!
-    private lateinit var favouriteViewModel: FavouriteViewModel
+    private val prefCounter: SharedPreferences by lazy {
+        requireContext().getSharedPreferences("COUNTER_SHARED_PREF", Context.MODE_PRIVATE)
+    }
     private val pref: SharedPreferences by lazy {
         requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
     }
     private lateinit var articleAdapter: ArticleAdapter
-    private lateinit var entityArticle: EntityArticle
-    private var uiArticles = mutableListOf<UiArticle>()
-    private val articleToEntityArticle = ArticleToEntityArticle()
-    private val entityArticleToArticle = EntityArticleToArticle()
+
     private val sharedViewModel: SharedViewModel by activityViewModels()
     private lateinit var toolBarSetting: ToolBarSetting
     private var _customToolBarLayoutBinding: CustomToolBarLayoutBinding? = null
+    private lateinit var viewModel: ArticlePreferencesViewModel
 
 
     override fun onAttach(context: Context) {
@@ -86,99 +89,73 @@ class FavouriteFragment : Fragment(), CellClickListener, FavIconClickListener,
         _customToolBarLayoutBinding = CustomToolBarLayoutBinding.inflate(layoutInflater)
         toolBarSetting.setUpToolBar("Favourite", Constants.FRAGMENT_FAVOURITE)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
+        val articlePreferencesRepository = ArticlePreferencesRepository(pref)
+        val articlePreferencesUseCase =
+            ArticlePreferencesUseCase(articlePreferencesRepository, articleEntityRepository)
+        viewModel = ViewModelProvider(
+            this,
+            ArticlePreferencesViewModelFactory(articlePreferencesUseCase)
+        )[ArticlePreferencesViewModel::class.java]
         val counter = 0
         sharedViewModel.setCounter(counter)
-        pref.edit().putInt("Counter", counter).apply()
-        favouriteViewModel = ViewModelProvider(
-            this,
-            FavouriteViewModelFactory(articleEntityRepository)
-        )[FavouriteViewModel::class.java]
-        articleAdapter =
-            ArticleAdapter(uiArticles, this@FavouriteFragment, this@FavouriteFragment, this)
-        mBinding.recyclerFavourite.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = articleAdapter
-        }
-        favouriteViewModel.getArticles()
-        favouriteViewModel.saveData.observe(viewLifecycleOwner) { entityArticles ->
-            for (entity in entityArticles) {
-                Log.d("ChEntity", entity.title.toString())
-            }
-            val articles = mapFromEntityToArticle(entityArticles)
-            uiArticles = map(articles as MutableList<Article>).asReversed()
-            sharedViewModel.setUiListArticle(articles)
-            sharedViewModel.setCountItemFav(uiArticles.size)
-            articleAdapter =
-                ArticleAdapter(uiArticles, this@FavouriteFragment, this@FavouriteFragment, this)
-            mBinding.recyclerFavourite.apply {
-                layoutManager = LinearLayoutManager(requireContext())
-                adapter = articleAdapter
-            }
+        prefCounter.edit().putInt("Counter", counter).apply()
 
+        viewModel.getAllArticles()
 
-            if (entityArticles.isEmpty()) {
-                mBinding.apply {
-                    recyclerFavourite.visibility = View.INVISIBLE
-                    favouriteImage.visibility = View.VISIBLE
-                    favouriteTitle.visibility = View.VISIBLE
-                    favouriteDescriptionText.visibility = View.VISIBLE
+        collectLatestLifecycleFlow(viewModel.uiStateFlow) { uiState ->
+            when (uiState) {
+
+                is UiState.ShowEmptyScreen -> {
+                    sharedViewModel.setCountItemFav(0)
+                    with(mBinding) {
+                        recyclerFavourite.visibility = View.INVISIBLE
+                        favouriteImage.visibility = View.VISIBLE
+                        favouriteTitle.visibility = View.VISIBLE
+                        favouriteDescriptionText.visibility = View.VISIBLE
+                    }
                 }
+                is UiState.ShowUiArticle -> {
 
-            } else {
-                mBinding.apply {
-                    recyclerFavourite.visibility = View.VISIBLE
-                    favouriteImage.visibility = View.INVISIBLE
-                    favouriteTitle.visibility = View.INVISIBLE
-                    favouriteDescriptionText.visibility = View.INVISIBLE
+                    with(mBinding) {
+                        recyclerFavourite.visibility = View.VISIBLE
+                        favouriteImage.visibility = View.INVISIBLE
+                        favouriteTitle.visibility = View.INVISIBLE
+                        favouriteDescriptionText.visibility = View.INVISIBLE
+
+                    }
+                    sharedViewModel.setCountItemFav(uiState.uiArticles.size)
+                    Log.d("UI_ARTICLE_SIZE", uiState.uiArticles.size.toString())
+                    articleAdapter =
+                        ArticleAdapter(
+                            uiState.uiArticles,
+                            this@FavouriteFragment,
+                            this@FavouriteFragment,
+                            this@FavouriteFragment
+                        )
+                    mBinding.recyclerFavourite.apply {
+                        layoutManager = LinearLayoutManager(requireContext())
+                        adapter = articleAdapter
+
+                    }
                 }
+                else -> {}
             }
 
         }
 
-
     }
 
-
-    private fun map(articles: MutableList<Article>): MutableList<UiArticle> {
-        val uiList = mutableListOf<UiArticle>()
-        val isLiked = false
-        for (article in articles) {
-            uiList.add(UiArticle(article, pref.getBoolean(article.title, isLiked)))
-        }
-        return uiList
-    }
-
-    private fun mapFromEntityToArticle(entityArticles: List<EntityArticle>): List<Article> {
-        val articles = arrayListOf<Article>()
-        for (entity in entityArticles) {
-            articles.add(entityArticleToArticle.map(entity))
-        }
-        return articles
-    }
 
     override fun onCellClickListener(article: Article) {
         val bundle = bundleOf("article" to article)
         bundle.putInt("argInt", 3)
-        view?.findNavController()?.navigate(R.id.action_favouriteFragment_to_detailFragment, bundle)
+        view?.findNavController()
+            ?.navigate(R.id.action_favouriteFragment_to_detailFragment, bundle)
     }
 
     override fun onFavIconClickListener(uiArticle: UiArticle) {
-        uiArticle.isLiked.let {
-            pref.edit().putBoolean(uiArticle.article.title, it)
-                .apply()
-        }
-        Log.d("idTitle", uiArticle.article.title.toString())
-        entityArticle = articleToEntityArticle.map(uiArticle.article)
-        favouriteViewModel.deleteArticle(entityArticle.title.toString())
-        favouriteViewModel.getArticles()
-        Toast.makeText(requireContext(), "DELETED", Toast.LENGTH_SHORT).show()
-        favouriteViewModel.saveData.observe(viewLifecycleOwner) { entityArticles ->
-            val articles = mapFromEntityToArticle(entityArticles)
-            val uiArticles = map(articles as MutableList<Article>).asReversed()
-            articleAdapter.updateArticles(uiArticles)
-
-        }
-
+        viewModel.deleteEntityArticle(uiArticle.article)
+        viewModel.getAllArticles()
         setOnTimeWorkRequest()
 
 
