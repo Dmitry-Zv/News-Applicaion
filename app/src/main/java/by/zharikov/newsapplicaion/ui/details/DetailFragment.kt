@@ -21,10 +21,14 @@ import by.zharikov.newsapplicaion.R
 import by.zharikov.newsapplicaion.data.model.UiArticle
 import by.zharikov.newsapplicaion.databinding.FragmentDetailBinding
 import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
+import by.zharikov.newsapplicaion.repository.ArticlePreferencesRepository
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModel
 import by.zharikov.newsapplicaion.ui.SharedViewModel
-import by.zharikov.newsapplicaion.utils.ArticleToEntityArticle
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesUseCase
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModelFactory
 import by.zharikov.newsapplicaion.utils.Constants
 import by.zharikov.newsapplicaion.utils.ToolBarSetting
+import by.zharikov.newsapplicaion.utils.collectLatestLifecycleFlow
 import by.zharikov.newsapplicaion.worker.UploadWorker
 import com.bumptech.glide.Glide
 
@@ -34,12 +38,13 @@ class DetailFragment : Fragment() {
     private var _binding: FragmentDetailBinding? = null
     private val mBinding get() = _binding!!
     private val bundleArgs: DetailFragmentArgs by navArgs()
+    private val prefCounter: SharedPreferences by lazy {
+        requireContext().getSharedPreferences("COUNTER_SHARED_PREF", Context.MODE_PRIVATE)
+    }
     private val pref: SharedPreferences by lazy {
         requireContext().getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
     }
-    private val articleToEntityArticle = ArticleToEntityArticle()
-    private lateinit var viewModel: DetailViewModel
-    private var isLike = false
+    private lateinit var viewModel: ArticlePreferencesViewModel
     private val sharedViewModel: SharedViewModel by activityViewModels()
     private lateinit var toolBarSetting: ToolBarSetting
 
@@ -60,12 +65,16 @@ class DetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         toolBarSetting.setUpToolBar("Detail", Constants.FRAGMENT_DETAILED)
-        var counter = pref.getInt("Counter", 0)
+        var counter = prefCounter.getInt("Counter", 0)
         val articleEntityRepository = ArticleEntityRepository(requireContext())
+        val articlePreferencesRepository = ArticlePreferencesRepository(pref)
+        val articlePreferencesUseCase =
+            ArticlePreferencesUseCase(articlePreferencesRepository, articleEntityRepository)
         viewModel = ViewModelProvider(
             this,
-            DetailViewModelFactory(articleEntityRepository = articleEntityRepository)
-        )[DetailViewModel::class.java]
+            ArticlePreferencesViewModelFactory(articlePreferencesUseCase)
+        )[ArticlePreferencesViewModel::class.java]
+
         val articleArg = bundleArgs.article
         articleArg.let { article ->
 
@@ -83,38 +92,24 @@ class DetailFragment : Fragment() {
 
             }
         }
-        val entityArticle = articleToEntityArticle.map(articleArg)
-        val uiArticle = UiArticle(articleArg, pref.getBoolean(articleArg.title, isLike))
+        val uiArticle = UiArticle(articleArg, pref.getBoolean(articleArg.url, false))
         if (uiArticle.isLiked) mBinding.iconFavourite.setImageResource(R.drawable.ic_favorite_24)
         else mBinding.iconFavourite.setImageResource(R.drawable.ic_favorite_border_24)
         mBinding.iconFavourite.setOnClickListener {
             uiArticle.isLiked = !uiArticle.isLiked
             Log.d("idTitle", articleArg.title.toString())
             if (uiArticle.isLiked) {
+                viewModel.addArticle(articleArg)
                 mBinding.iconFavourite.setImageResource(R.drawable.ic_favorite_24)
-                viewModel.insertArticle(entityArticle)
-                Log.d("Title", entityArticle.title.toString())
                 Toast.makeText(requireContext(), "SAVED", Toast.LENGTH_SHORT).show()
-                pref.edit().putBoolean(articleArg.title, uiArticle.isLiked)
-                    .apply()
-                Log.d("idTitle", articleArg.title.toString())
                 counter++
-                sharedViewModel.setCounter(counter)
-                pref.edit().putInt("Counter", counter).apply()
+                prefCounter.edit().putInt("Counter", counter).apply()
 
             } else {
+                viewModel.deleteEntityArticle(articleArg)
                 mBinding.iconFavourite.setImageResource(R.drawable.ic_favorite_border_24)
-                viewModel.deleteArticle(entityArticle.title.toString())
-                Log.d("Title", entityArticle.title.toString())
                 Toast.makeText(requireContext(), "DELETED", Toast.LENGTH_SHORT).show()
-
-                pref.edit().putBoolean(articleArg.title, uiArticle.isLiked)
-                    .apply()
-
-
-
-                Log.d("idTitle", articleArg.title.toString())
-                sharedViewModel.articles.observe(viewLifecycleOwner) { articles ->
+                collectLatestLifecycleFlow(sharedViewModel.articles) { articles ->
                     if (!articles.contains(uiArticle.article)) {
                         if (counter > 0) counter--
                     }
@@ -123,7 +118,7 @@ class DetailFragment : Fragment() {
             setOnTimeWorkRequest()
 
             sharedViewModel.setCounter(counter)
-            pref.edit().putInt("Counter", counter).apply()
+            prefCounter.edit().putInt("Counter", counter).apply()
         }
 
 

@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/teal"
     android:orientation="vertical"
-    tools:context=".ui.authentication.RegisterActivity">
+    tools:context=".ui.authentication.register.RegisterActivity">
 
     <TextView
         android:id="@+id/register_title"
@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="120dp"
         android:text="@string/register"
         android:textColor="@color/white"
         android:textSize="40sp"
@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/input_password"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="16dp"
         android:background="@drawable/input_bg"
         android:drawableStart="@drawable/ic_email"
         android:drawablePadding="10dp"
@@ -131,7 +131,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="24dp"
         android:indeterminate="true"
-        android:indeterminateDrawable="@drawable/progress_bar"
+        android:indeterminateDrawable="@drawable/progress_bar_white"
         android:visibility="invisible" />
 
 

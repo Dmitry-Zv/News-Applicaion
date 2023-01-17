@@ -72,6 +72,8 @@
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="24dp"
         android:background="@android:color/transparent"
+        android:indeterminate="true"
+        android:indeterminateDrawable="@drawable/progress_bar_black"
         android:visibility="invisible" />
 
     <ImageView

@@ -46,5 +46,7 @@
     <string name="server_client_id">762714654374-ol09go9jmkmmjv10trasr9bvnll93c0e.apps.googleusercontent.com</string>
     <string name="change_email">Change email</string>
     <string name="enter_new_email">Enter new email!</string>
+    <string name="dark_light_themes">Dark/Light themes</string>
+    <string name="account_management">Account management</string>
 
 </resources>

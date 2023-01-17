@@ -17,6 +17,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.setupWithNavController
@@ -31,36 +32,37 @@ import by.zharikov.newsapplicaion.connectivity.NetworkStatusViewModel
 import by.zharikov.newsapplicaion.connectivity.NetworkStatusViewModelFactory
 import by.zharikov.newsapplicaion.data.model.Settings
 import by.zharikov.newsapplicaion.data.model.UiArticle
+import by.zharikov.newsapplicaion.data.model.User
 import by.zharikov.newsapplicaion.databinding.ActivityMainBinding
 import by.zharikov.newsapplicaion.databinding.CustomAlertDialogBinding
 import by.zharikov.newsapplicaion.databinding.CustomAlertDialogNewEmailBinding
 import by.zharikov.newsapplicaion.databinding.NavHeaderBinding
-import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
-import by.zharikov.newsapplicaion.repository.RegistrationRepository
-import by.zharikov.newsapplicaion.repository.UploadDownloadUiArticleOnFirebaseDatabaseRepository
-import by.zharikov.newsapplicaion.repository.UploadDownloadImageRepository
+import by.zharikov.newsapplicaion.repository.*
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModel
 import by.zharikov.newsapplicaion.ui.SharedViewModel
-import by.zharikov.newsapplicaion.ui.authentication.LoginActivity
-import by.zharikov.newsapplicaion.utils.ArticleToEntityArticle
+import by.zharikov.newsapplicaion.ui.authentication.login.LoginActivity
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesUseCase
+import by.zharikov.newsapplicaion.usecase.ArticlePreferencesViewModelFactory
 import by.zharikov.newsapplicaion.utils.Constants
 import by.zharikov.newsapplicaion.utils.SwitchIconClickListener
 import by.zharikov.newsapplicaion.utils.ToolBarSetting
+import by.zharikov.newsapplicaion.utils.collectLatestLifecycleFlow
 import by.zharikov.newsapplicaion.worker.UploadImageWorker
+import com.bumptech.glide.Glide
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListener {
     private var _binding: ActivityMainBinding? = null
     private val mBinding get() = _binding!!
     private lateinit var badge: BadgeDrawable
-    private lateinit var repository: RegistrationRepository
     private lateinit var actionBarToggle: ActionBarDrawerToggle
     private var _customAlertDialogNewEmailBinding: CustomAlertDialogNewEmailBinding? = null
     private val customAlertDialogNewEmailBinding get() = _customAlertDialogNewEmailBinding!!
@@ -68,8 +70,8 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
     private val customAlertDialogBinding get() = _customAlertDialogBinding!!
     private var _navHeaderBinding: NavHeaderBinding? = null
     private val navHeaderBinding get() = _navHeaderBinding!!
-    private val articleToEntityArticle = ArticleToEntityArticle()
     private lateinit var settingAdapter: SettingAdapter
+    private lateinit var articleViewModel: ArticlePreferencesViewModel
     private val sharedViewModel: SharedViewModel by lazy {
         ViewModelProvider(this)[SharedViewModel::class.java]
     }
@@ -78,6 +80,9 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
             this,
             NetworkStatusViewModelFactory(NetworkStatusTracker(this))
         )[NetworkStatusViewModel::class.java]
+    }
+    private val prefSetting: SharedPreferences by lazy {
+        getSharedPreferences("SETTING_BOOLEAN", Context.MODE_PRIVATE)
     }
     private val pref: SharedPreferences by lazy {
         getSharedPreferences("ARTICLE_PREF_BOOL", Context.MODE_PRIVATE)
@@ -93,11 +98,10 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
 
     private val launcher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == RESULT_OK) {
+            if (it.resultCode == RESULT_OK && it.data != null) {
                 try {
-                    val profileImageUri = it.data?.data
-                    navHeaderBinding.imageProfile.setImageURI(profileImageUri)
-
+                    val profileImageUri = it.data!!.data
+                    Glide.with(this).load(profileImageUri).into(navHeaderBinding.imageProfile)
                     val request = OneTimeWorkRequestBuilder<UploadImageWorker>().setInputData(
                         byteArrayInputDataBuilder(profileImageUri)
                     ).build()
@@ -112,7 +116,7 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        Log.d("LIFECYCLE_ACTIVITY", "On Create")
         _binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(mBinding.root)
         val navHostFragment =
@@ -121,13 +125,60 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
             navController = navHostFragment.findNavController()
         )
         uploadDownloadImageRepository = UploadDownloadImageRepository(this)
-        repository = RegistrationRepository(this)
+
         val articleEntityRepository = ArticleEntityRepository(this)
+        val articlePreferencesRepository = ArticlePreferencesRepository(pref)
+        val articlePreferencesUseCase =
+            ArticlePreferencesUseCase(articlePreferencesRepository, articleEntityRepository)
+        val firebaseRepository = FirebaseRepository(this)
+        articleViewModel = ViewModelProvider(
+            this,
+            ArticlePreferencesViewModelFactory(articlePreferencesUseCase)
+        )[ArticlePreferencesViewModel::class.java]
         mainViewModel = ViewModelProvider(
             this,
-            MainViewModelActivityFactory(articleEntityRepository)
+            MainViewModelActivityFactory(firebaseRepository)
         )[MainViewModel::class.java]
-        uploadDownloadImageRepository.downloadImage()
+
+        collectLatestLifecycleFlow(mainViewModel.uiState) { uiState ->
+            when (uiState) {
+                is UiStateAccount.SignOut -> startActivity(Intent(this, LoginActivity::class.java))
+                is UiStateAccount.ChangeEmail -> mainViewModel.getUser()
+                is UiStateAccount.DeleteAccount -> startActivity(
+                    Intent(
+                        this,
+                        LoginActivity::class.java
+                    )
+                )
+                is UiStateAccount.Error -> Toast.makeText(
+                    this,
+                    "Error: ${uiState.exception}",
+                    Toast.LENGTH_SHORT
+                ).show()
+                is UiStateAccount.GetUser -> initProfile(user = uiState.user)
+                is UiStateAccount.Initial -> {}
+            }
+
+        }
+        collectLatestLifecycleFlow(uploadDownloadImageRepository.data) { result ->
+            when (result) {
+                is ResultDownload.Success -> {
+                    val bitmap = BitmapFactory.decodeByteArray(result.data, 0, result.data.size)
+                    navHeaderBinding.imageProfile.setImageBitmap(bitmap)
+                    Toast.makeText(this@MainActivity, "Picture is download", Toast.LENGTH_SHORT)
+                        .show()
+                }
+                is ResultDownload.UnSuccess -> {
+                    navHeaderBinding.imageProfile.setImageResource(R.drawable.profile_image)
+                    Toast.makeText(
+                        this,
+                        "Error: ${result.error.message.toString()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                is ResultDownload.Initial -> {}
+            }
+        }
 
         _navHeaderBinding = NavHeaderBinding.inflate(layoutInflater)
 
@@ -136,30 +187,33 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
         settingAdapter = SettingAdapter(
             Settings.settings,
             this,
-            isChecked0 = pref.getBoolean("SettingBooleanPosition0", false),
-            isChecked1 = pref.getBoolean("SettingBooleanPosition1", false)
+            isChecked0 = prefSetting.getBoolean("SettingBooleanPosition0", false),
+            isChecked1 = prefSetting.getBoolean("SettingBooleanPosition1", false)
         )
         navHeaderBinding.settingRecycler.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = settingAdapter
         }
         navHeaderBinding.imageProfile.setOnClickListener {
-            val photoPickerIntent = Intent(Intent.ACTION_GET_CONTENT)
+            val photoPickerIntent = Intent(Intent.ACTION_PICK)
             photoPickerIntent.type = "image/*"
             launcher.launch(Intent.createChooser(photoPickerIntent, "Select image from here..."))
 
         }
-        if(prefSignIn.getBoolean("SIGN_IN_CHOICE", false)){
+        if (prefSignIn.getBoolean("SIGN_IN_CHOICE", false)) {
             mBinding.navView.inflateMenu(R.menu.drawer_list)
-        } else{
+        } else {
             mBinding.navView.inflateMenu(R.menu.drawer_list_google_authenticator)
         }
 
+
         mBinding.navView.setNavigationItemSelectedListener { menuItem ->
+            mBinding.drawLayout.closeDrawers()
             when (menuItem.itemId) {
                 R.id.change_email -> {
                     _customAlertDialogNewEmailBinding =
                         CustomAlertDialogNewEmailBinding.inflate(layoutInflater)
+
                     changeEmail()
                 }
                 R.id.delete_account -> {
@@ -167,23 +221,7 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                     deleteAccount()
                 }
                 R.id.sign_out -> {
-                    Snackbar.make(
-                        mBinding.root,
-                        "Are you sure?",
-                        Snackbar.LENGTH_LONG
-                    ).setAction("Sing Out") {
-                        repository.signOut()
-                        mainViewModel.getAllArticle()
-                        mainViewModel.entityListArticle.observe(this) { entityListArticle ->
-                            for (entityArticle in entityListArticle) {
-                                pref.edit().putBoolean(entityArticle.title, false).apply()
-                            }
-
-                        }
-                        mainViewModel.deleteAllArticle()
-
-                        startActivity(Intent(this, LoginActivity::class.java))
-                    }.show()
+                    signOut()
                 }
             }
             true
@@ -193,38 +231,45 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
             val uploadDownloadUiArticleOnFirebaseDatabaseRepository =
                 UploadDownloadUiArticleOnFirebaseDatabaseRepository(this)
             uploadDownloadUiArticleOnFirebaseDatabaseRepository.downloadUiArticleFromFirebaseDatabase()
-            uploadDownloadUiArticleOnFirebaseDatabaseRepository.uiArticleListFromFirebase.observe(
-                this
-            ) { uiArticleList ->
+            collectLatestLifecycleFlow(uploadDownloadUiArticleOnFirebaseDatabaseRepository.uiArticleListFromFirebase) { uiArticleList ->
+                Log.d("UI_ARTICLE_LIST", uiArticleList.toString())
                 for (uiArticle in uiArticleList) {
-                    initializeFavourite(uiArticle)
+                    if (uiArticle.article.url != "") initializeFavourite(uiArticle)
                 }
             }
         }
-        val isChecked0 = pref.getBoolean("SettingBooleanPosition0", false)
-        val isChecked1 = pref.getBoolean("SettingBooleanPosition1", false)
+        val isChecked0 = prefSetting.getBoolean("SettingBooleanPosition0", false)
+        val isChecked1 = prefSetting.getBoolean("SettingBooleanPosition1", false)
         if (isChecked1) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         else {
-            if (isChecked0) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            if (isChecked0) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            }
         }
 
 
         badge = mBinding.bottomNav.getOrCreateBadge(R.id.favourite)
-        sharedViewModel.counter.observe(this@MainActivity) { counter ->
-            badge.number = counter
-            badge.isVisible = badge.number > 0
+        lifecycleScope.launch {
+            sharedViewModel.counter.collect { counter ->
+                Log.d("INT_COUNTER", counter.toString())
+                badge.number = counter
+                badge.isVisible = badge.number > 0
+            }
         }
 
 
 
         checkForConnection()
-        viewModel.state.observe(this) { state ->
-
+        collectLatestLifecycleFlow(viewModel.state) { state ->
             when (state) {
                 MyState.Fetched -> {
                     sharedViewModel.setState(state)
-                    Toast.makeText(this, "Fetched", Toast.LENGTH_SHORT).show()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "Fetched", Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
 
                 MyState.Lost -> {
@@ -240,27 +285,25 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
 
             }
         }
-        sharedViewModel.isCheckedPosition1.observe(this) { isChecked1 ->
-            if (isChecked1) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
 
-        }
-        sharedViewModel.isCheckedPosition0.observe(this) { isChecked0 ->
-            Log.d("SwitchChecked", isChecked0.toString())
-            val isChecked = pref.getBoolean("SettingBooleanPosition1", false)
+    }
 
-            if (!isChecked) {
-                if (isChecked0) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            }
-        }
-
-
+    private fun signOut() {
+        Snackbar.make(
+            mBinding.root,
+            "Are you sure?",
+            Snackbar.LENGTH_LONG
+        ).setAction("Sing Out") {
+            mainViewModel.signOut()
+            articleViewModel.deleteAllArticle()
+        }.show()
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
+        Log.d("LIFECYCLE_ACTIVITY", "On Destroy")
     }
 
     private fun checkForConnection() {
@@ -281,14 +324,17 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                 Constants.FRAGMENT_MAIN, Constants.FRAGMENT_SEARCH, Constants.FRAGMENT_DETAILED -> headerCount.visibility =
                     View.INVISIBLE
                 Constants.FRAGMENT_FAVOURITE -> {
-                    sharedViewModel.countItemSave.observe(this@MainActivity) { countItemSave ->
-                        if (countItemSave > 0) {
-                            headerCount.text = countItemSave.toString()
-                            headerCount.visibility = View.VISIBLE
+                    lifecycleScope.launch {
+                        sharedViewModel.countItemSave.collect { countItemSave ->
+                            if (countItemSave > 0) {
+                                headerCount.text = countItemSave.toString()
+                                headerCount.visibility = View.VISIBLE
 
-                        } else headerCount.visibility = View.INVISIBLE
+                            } else headerCount.visibility = View.INVISIBLE
+                        }
                     }
                 }
+                else -> {}
             }
         }
         setSupportActionBar(mBinding.customToolBar.toolBar)
@@ -296,27 +342,14 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
             ActionBarDrawerToggle(this, mBinding.drawLayout, mBinding.customToolBar.toolBar, 0, 0)
 
         mBinding.drawLayout.addDrawerListener(actionBarToggle)
-        initProfile()
         actionBarToggle.syncState()
 
 
     }
 
     private fun initializeFavourite(uiArticle: UiArticle) {
-        val articleEntityRepository = ArticleEntityRepository(this)
-        pref.edit().putBoolean(uiArticle.article.title, uiArticle.isLiked)
-            .apply()
-        Log.d("idTitle", uiArticle.article.title.toString())
-        val entityArticle = uiArticle.article.let { articleToEntityArticle.map(it) }
-
-        if (uiArticle.isLiked) {
-            CoroutineScope(Dispatchers.IO).launch {
-
-                articleEntityRepository.repInsertArticle(entityArticle)
-            }
-            Log.d("Title", entityArticle.title.toString())
-            Toast.makeText(this, "SAVED", Toast.LENGTH_SHORT).show()
-        }
+        articleViewModel.addArticle(uiArticle.article)
+        Toast.makeText(this, "SAVED", Toast.LENGTH_SHORT).show()
     }
 
     private fun changeEmail() {
@@ -329,12 +362,11 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                 val password = customAlertDialogNewEmailBinding.inputPasswordEt.text.toString()
                 val newEmail = customAlertDialogNewEmailBinding.newInputEmailEt.text.toString()
                 if (email.isEmpty() || password.isEmpty() || newEmail.isEmpty()) return@setPositiveButton
-                repository.changeEmail(
-                    EmailAuthProvider.getCredential(email, password),
-                    newEmail,
-                    profileName
+                mainViewModel.changeAccount(
+                    credential = EmailAuthProvider.getCredential(email, password),
+                    email = newEmail,
+                    profileName = profileName
                 )
-                initProfile()
                 dialog.dismiss()
             }
             .setNegativeButton("Cansel") { dialog, _ ->
@@ -344,27 +376,18 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
     }
 
 
-    private fun initProfile() {
-        repository.getUser()
-        repository.user.observe(this) { user ->
-            with(navHeaderBinding) {
-                profileName.text = user.displayName
-                profileEmail.text = user.email
-                uploadDownloadImageRepository.data.observe(this@MainActivity) {
-                    val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
-                    imageProfile.setImageBitmap(bitmap)
-                }
-                uploadDownloadImageRepository.exception.observe(this@MainActivity) {
-                    imageProfile.setImageResource(R.drawable.profile_image)
-                }
-            }
+    private fun initProfile(user: User?) {
 
-
+        with(navHeaderBinding) {
+            profileName.text = user?.displayName
+            profileEmail.text = user?.email
         }
+        uploadDownloadImageRepository.downloadImage()
     }
 
 
     private fun deleteAccount() {
+
 
         when (prefSignIn.getBoolean("SIGN_IN_CHOICE", false)) {
             true -> {
@@ -375,28 +398,10 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                         val email = customAlertDialogBinding.inputEmailEt.text.toString()
                         val password = customAlertDialogBinding.inputPasswordEt.text.toString()
                         if (email.isEmpty() || password.isEmpty()) return@setPositiveButton
-                        repository.deleteUser(
-                            EmailAuthProvider.getCredential(
-                                email,
-                                password
-                            )
+                        mainViewModel.deleteAccount(
+                            credential = EmailAuthProvider.getCredential(email, password)
                         )
-                        mainViewModel.getAllArticle()
-                        mainViewModel.entityListArticle.observe(this) { entityListArticle ->
-                            for (entityArticle in entityListArticle) {
-                                pref.edit().putBoolean(entityArticle.title, false).apply()
-                            }
-
-                        }
-                        mainViewModel.deleteAllArticle()
-                        repository.deleteFlag.observe(this) {
-                            if (it) startActivity(
-                                Intent(
-                                    this,
-                                    LoginActivity::class.java
-                                )
-                            )
-                        }
+                        articleViewModel.deleteAllArticle()
                         uploadDownloadImageRepository.deleteImage()
                     }
                     .setNegativeButton("Cancel") { dialog, _ ->
@@ -408,28 +413,10 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
                 Snackbar.make(mBinding.root, "Delete account?", Snackbar.LENGTH_LONG)
                     .setAction("Delete") {
                         val account = GoogleSignIn.getLastSignedInAccount(this)
-                        repository.deleteUser(
-                            GoogleAuthProvider.getCredential(
-                                account?.idToken,
-                                null
-                            )
+                        mainViewModel.deleteAccount(
+                            credential = GoogleAuthProvider.getCredential(account?.idToken, null)
                         )
-                        mainViewModel.getAllArticle()
-                        mainViewModel.entityListArticle.observe(this) { entityListArticle ->
-                            for (entityArticle in entityListArticle) {
-                                pref.edit().putBoolean(entityArticle.title, false).apply()
-                            }
-
-                        }
-                        mainViewModel.deleteAllArticle()
-                        repository.deleteFlag.observe(this) {
-                            if (it) startActivity(
-                                Intent(
-                                    this,
-                                    LoginActivity::class.java
-                                )
-                            )
-                        }
+                        articleViewModel.deleteAllArticle()
                         uploadDownloadImageRepository.deleteImage()
                     }
                     .show()
@@ -443,11 +430,17 @@ class MainActivity : AppCompatActivity(), ToolBarSetting, SwitchIconClickListene
         when (position) {
             0 -> {
                 sharedViewModel.setStateIsCheckedForPosition0(isChecked)
-                pref.edit().putBoolean("SettingBooleanPosition0", isChecked).apply()
+                prefSetting.edit().putBoolean("SettingBooleanPosition0", isChecked).apply()
+                if (isChecked) {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                } else {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                }
+
             }
             1 -> {
                 sharedViewModel.setStateIsCheckedForPosition1(isChecked)
-                pref.edit().putBoolean("SettingBooleanPosition1", isChecked).apply()
+                prefSetting.edit().putBoolean("SettingBooleanPosition1", isChecked).apply()
             }
         }
     }

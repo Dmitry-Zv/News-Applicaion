@@ -1,70 +1,54 @@
 package by.zharikov.newsapplicaion.ui.search
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import by.zharikov.newsapplicaion.data.model.EntityArticle
-import by.zharikov.newsapplicaion.data.model.NewsModel
-import by.zharikov.newsapplicaion.repository.ArticleEntityRepository
-import by.zharikov.newsapplicaion.repository.NewsRepository
+import by.zharikov.newsapplicaion.data.model.UiState
+import by.zharikov.newsapplicaion.usecase.article_retrofit_use_case.Result
+import by.zharikov.newsapplicaion.usecase.article_retrofit_use_case.ArticleRetrofitUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    private val newsRepository: NewsRepository,
-    private val articleEntityRepository: ArticleEntityRepository
+    private val articleRetrofitUseCase: ArticleRetrofitUseCase
 ) : ViewModel() {
-    private val _newsViewModel = MutableLiveData<NewsModel>()
-    val newsModel: LiveData<NewsModel>
-        get() = _newsViewModel
-    private val _errorMessage = MutableLiveData<String>()
-    val errorMessage: LiveData<String>
-        get() = _errorMessage
+    private val _uiState = MutableStateFlow<UiState>(UiState.Initial)
+    val uiState = _uiState.asStateFlow()
+
     private val pageNumber = 1
 
-    fun getNews(q: String) {
+    init {
         viewModelScope.launch {
-            try {
-                val response = newsRepository.newsGetEverything(q, pageNumber)
-                if (response.isSuccessful) {
-                    _newsViewModel.postValue(response.body())
+            articleRetrofitUseCase.resultState.collectLatest { result ->
+                when (result) {
+                    is Result.SuccessArticleGetEverything -> _uiState.value =
+                        UiState.ShowArticles(articles = result.articles)
+                    is Result.SuccessTopHeadlinesArticles -> _uiState.value =
+                        UiState.ShowArticles(articles = result.articles)
+                    is Result.Error -> _uiState.value =
+                        UiState.Error(exception = result.exception)
+                    else -> {}
                 }
-            } catch (e: Exception) {
-                _errorMessage.postValue(e.message)
             }
-
         }
+
     }
 
-    fun getArticle(countryCode: String) {
+    fun getArticleQuery(q: String) {
         viewModelScope.launch {
-            try {
-                val response = newsRepository.newsGetTopHeadlines(countryCode, pageNumber)
-
-                if (response.isSuccessful) {
-                    _newsViewModel.postValue(response.body())
-                }
-            } catch (e: Exception) {
-                _errorMessage.postValue(e.message)
-            }
-
+            articleRetrofitUseCase.invokeGetEverythingArticle(q = q, pageNumber = pageNumber)
         }
     }
 
-
-    fun insertArticle(article: EntityArticle) {
+    fun getArticles(countryCode: String) {
         viewModelScope.launch {
-
-            articleEntityRepository.repInsertArticle(article = article)
-        }
-
-    }
-
-    fun deleteArticle(title: String) {
-        viewModelScope.launch {
-
-            articleEntityRepository.repDeleteArticle(title = title)
+            articleRetrofitUseCase.invokeGetTopHeadLinesArticle(
+                country = countryCode,
+                pageNumber = pageNumber
+            )
         }
     }
+
 
 }
