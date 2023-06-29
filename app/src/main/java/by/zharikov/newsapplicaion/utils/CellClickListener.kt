@@ -1,7 +1,7 @@
 package by.zharikov.newsapplicaion.utils
 
-import by.zharikov.newsapplicaion.data.model.Article
+import by.zharikov.newsapplicaion.domain.model.UiArticle
 
 interface CellClickListener {
-    fun onCellClickListener(article: Article)
+    fun onCellClickListener(uiArticle: UiArticle)
 }

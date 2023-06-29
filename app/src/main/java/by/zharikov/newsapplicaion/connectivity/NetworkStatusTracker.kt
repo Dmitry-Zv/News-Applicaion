@@ -1,6 +1,5 @@
 package by.zharikov.newsapplicaion.connectivity
 
-import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -11,13 +10,10 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
 
-class NetworkStatusTracker(context: Context) {
-
-
-    private val connectivityManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+class NetworkStatusTracker @Inject constructor(private val connectivityManager: ConnectivityManager) {
 
     @RequiresApi(Build.VERSION_CODES.O)
     val networkStatus = callbackFlow {

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.favourie.FavouriteFragment">
+    tools:context=".presentation.favourie.FavouriteFragment">
 
     <ImageView
         android:id="@+id/favourite_image"

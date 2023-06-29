@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/searchFragment"
-        android:name="by.zharikov.newsapplicaion.ui.search.SearchFragment"
+        android:name="by.zharikov.newsapplicaion.presentation.search.SearchFragment"
         android:label="fragment_search"
         tools:layout="@layout/fragment_search">
         <action
@@ -19,7 +19,7 @@
     </fragment>
     <fragment
         android:id="@+id/detailFragment"
-        android:name="by.zharikov.newsapplicaion.ui.details.DetailFragment"
+        android:name="by.zharikov.newsapplicaion.presentation.details.DetailFragment"
         android:label="fragment_detail"
         tools:layout="@layout/fragment_detail">
         <action
@@ -29,15 +29,13 @@
             android:id="@+id/action_detailFragment_to_searchFragment"
             app:destination="@id/searchFragment" />
         <argument
-            android:name="article"
-            app:argType="by.zharikov.newsapplicaion.data.model.Article" />
-        <argument
-            android:name="argInt"
-            app:argType="integer" />
+            android:name="uiArticle"
+            app:argType="by.zharikov.newsapplicaion.domain.model.UiArticle" />
+
     </fragment>
     <fragment
         android:id="@+id/webFragment"
-        android:name="by.zharikov.newsapplicaion.ui.web.WebFragment"
+        android:name="by.zharikov.newsapplicaion.presentation.web.WebFragment"
         android:label="fragment_web"
         tools:layout="@layout/fragment_web">
         <action
@@ -45,9 +43,7 @@
             app:destination="@id/detailFragment" />
         <argument
             android:name="article_arg"
-            app:argType="by.zharikov.newsapplicaion.data.model.Article" />
-        <argument
-            android:name="arg_int"
-            app:argType="integer" />
+            app:argType="by.zharikov.newsapplicaion.domain.model.Article" />
+
     </fragment>
 </navigation>
